@@ -1,14 +1,14 @@
 export interface Booking {
   id: string;
-  userId: string;
+  customerId: string;
   salonId: string;
-  serviceId: string;
+  serviceIds: string[];
   staffId?: string;
   date: string;
   time: string;
-  status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
+  status: "pending" | "confirmed" | "completed" | "cancelled";
   totalPrice: number;
-  currency: string;
+  paymentStatus: "pending" | "paid" | "failed";
   notes?: string;
   createdAt: string;
 }

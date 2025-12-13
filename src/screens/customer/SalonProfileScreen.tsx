@@ -378,12 +378,15 @@ export const SalonProfileScreen = ({ route, navigation }: any) => {
       </ScrollView>
 
       <View style={styles.footer}>
-        <Text style={styles.footerText}>58 services available</Text>
+        <Text style={styles.footerText}>
+          {services.length} services available
+        </Text>
         <TouchableOpacity
           style={styles.bookNowButton}
           onPress={() =>
-            navigation.navigate("Booking", {
+            navigation.navigate("BookingForm", {
               salonId,
+              salonName: salon.name,
             })
           }
         >

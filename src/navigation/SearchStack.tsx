@@ -1,21 +1,21 @@
 import { createStackNavigator } from "@react-navigation/stack";
 import React from "react";
 import { BookingFormScreen } from "../screens/customer/BookingFormScreen";
-import { HomeScreen } from "../screens/customer/HomeScreen";
 import { SalonProfileScreen } from "../screens/customer/SalonProfileScreen";
+import { SearchScreen } from "../screens/customer/SearchScreen";
 
-export type HomeStackParamList = {
-  Home: undefined;
+export type SearchStackParamList = {
+  Search: undefined;
   SalonProfile: { salonId: string };
   BookingForm: { salonId: string; salonName: string };
 };
 
-const Stack = createStackNavigator<HomeStackParamList>();
+const Stack = createStackNavigator<SearchStackParamList>();
 
-export function HomeStack() {
+export function SearchStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="Home" component={HomeScreen} />
+      <Stack.Screen name="Search" component={SearchScreen} />
       <Stack.Screen
         name="SalonProfile"
         component={SalonProfileScreen}
