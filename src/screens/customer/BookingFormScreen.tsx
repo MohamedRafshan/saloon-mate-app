@@ -14,37 +14,133 @@ import {
 import { bookingService } from "../../api/bookingService";
 import { mockAPI } from "../../api/mock";
 import { theme } from "../../theme";
+import { Booking } from "../../types/Booking";
+import { Salon } from "../../types/Salon";
 import { Service } from "../../types/Service";
 
 export const BookingFormScreen = ({ route, navigation }: any) => {
   const { salonId, salonName } = route.params;
 
   // Form state
+  const [salon, setSalon] = useState<Salon | null>(null);
   const [services, setServices] = useState<Service[]>([]);
   const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([]);
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [selectedTime, setSelectedTime] = useState(new Date());
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>("");
+  const [availableTimeSlots, setAvailableTimeSlots] = useState<string[]>([]);
+  const [existingBookings, setExistingBookings] = useState<Booking[]>([]);
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
-  // Date/Time picker visibility
+  // Date picker visibility
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [showTimePicker, setShowTimePicker] = useState(false);
 
   useEffect(() => {
-    loadServices();
+    loadData();
   }, [salonId]);
 
-  const loadServices = async () => {
+  useEffect(() => {
+    if (salon && selectedDate) {
+      generateAvailableTimeSlots();
+    }
+  }, [selectedDate, salon, existingBookings]);
+
+  const loadData = async () => {
     try {
-      const servicesData = await mockAPI.getServicesBySalonId(salonId);
+      const [salonData, servicesData, bookingsData] = await Promise.all([
+        mockAPI.getSalonById(salonId),
+        mockAPI.getServicesBySalonId(salonId),
+        mockAPI.getBookingsBySalonId(salonId),
+      ]);
+      setSalon(salonData);
       setServices(servicesData);
+      setExistingBookings(bookingsData);
     } catch (error) {
-      Alert.alert("Error", "Failed to load services");
+      Alert.alert("Error", "Failed to load salon data");
     } finally {
       setLoading(false);
     }
+  };
+
+  const generateAvailableTimeSlots = () => {
+    if (!salon) return;
+
+    const dayName = selectedDate.toLocaleDateString("en-US", {
+      weekday: "long",
+    });
+
+    // Handle both array format and object format for opening hours
+    let openingHours;
+    if (Array.isArray(salon.openingHours)) {
+      openingHours = salon.openingHours.find((hours) => hours.day === dayName);
+    } else if (salon.openingHours) {
+      // Convert object format to array format
+      const dayKey = dayName.toLowerCase();
+      const hoursObj = (salon.openingHours as any)[dayKey];
+      if (hoursObj) {
+        openingHours = {
+          day: dayName,
+          open: hoursObj.open,
+          close: hoursObj.close,
+          closed: hoursObj.closed,
+        };
+      }
+    }
+
+    if (!openingHours || openingHours.closed || !openingHours.open) {
+      setAvailableTimeSlots([]);
+      return;
+    }
+
+    // Parse opening and closing times
+    const [openHour, openMinute] = openingHours.open.split(":").map(Number);
+    const [closeHour, closeMinute] = openingHours.close.split(":").map(Number);
+
+    // Generate 30-minute time slots
+    const slots: string[] = [];
+    let currentHour = openHour;
+    let currentMinute = openMinute;
+
+    while (
+      currentHour < closeHour ||
+      (currentHour === closeHour && currentMinute < closeMinute)
+    ) {
+      const timeSlot = `${String(currentHour).padStart(2, "0")}:${String(
+        currentMinute
+      ).padStart(2, "0")}`;
+
+      // Check if this time slot conflicts with existing bookings
+      const isBooked = isTimeSlotBooked(timeSlot);
+
+      if (!isBooked) {
+        slots.push(timeSlot);
+      }
+
+      // Increment by 30 minutes
+      currentMinute += 30;
+      if (currentMinute >= 60) {
+        currentMinute = 0;
+        currentHour += 1;
+      }
+    }
+
+    setAvailableTimeSlots(slots);
+  };
+
+  const isTimeSlotBooked = (timeSlot: string): boolean => {
+    const selectedDateStr = formatDate(selectedDate);
+
+    return existingBookings.some((booking) => {
+      if (booking.date !== selectedDateStr || booking.status === "cancelled") {
+        return false;
+      }
+
+      // Check if the time slot overlaps with existing booking
+      // Assuming each booking takes at least 30 minutes
+      const bookingTime = booking.time.substring(0, 5);
+      return bookingTime === timeSlot;
+    });
   };
 
   const toggleService = (serviceId: string) => {
@@ -70,17 +166,11 @@ export const BookingFormScreen = ({ route, navigation }: any) => {
     return time.toTimeString().split(" ")[0].substring(0, 5);
   };
 
-  const onDateChange = (event: any, selectedDate?: Date) => {
+  const onDateChange = (event: any, date?: Date) => {
     setShowDatePicker(Platform.OS === "ios");
-    if (selectedDate) {
-      setSelectedDate(selectedDate);
-    }
-  };
-
-  const onTimeChange = (event: any, selectedTime?: Date) => {
-    setShowTimePicker(Platform.OS === "ios");
-    if (selectedTime) {
-      setSelectedTime(selectedTime);
+    if (date) {
+      setSelectedDate(date);
+      setSelectedTimeSlot(""); // Reset time slot when date changes
     }
   };
 
@@ -91,11 +181,42 @@ export const BookingFormScreen = ({ route, navigation }: any) => {
       return;
     }
 
+    if (!selectedTimeSlot) {
+      Alert.alert("Error", "Please select a time slot");
+      return;
+    }
+
     // Check if date is not in the past
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     if (selectedDate < today) {
       Alert.alert("Error", "Please select a future date");
+      return;
+    }
+
+    // Check if salon is open on selected day
+    const dayName = selectedDate.toLocaleDateString("en-US", {
+      weekday: "long",
+    });
+    let openingHours;
+
+    if (Array.isArray(salon?.openingHours)) {
+      openingHours = salon.openingHours.find((hours) => hours.day === dayName);
+    } else if (salon?.openingHours) {
+      const dayKey = dayName.toLowerCase();
+      const hoursObj = (salon.openingHours as any)[dayKey];
+      if (hoursObj) {
+        openingHours = {
+          day: dayName,
+          open: hoursObj.open,
+          close: hoursObj.close,
+          closed: hoursObj.closed,
+        };
+      }
+    }
+
+    if (!openingHours || openingHours.closed || !openingHours.open) {
+      Alert.alert("Error", "Salon is closed on the selected day");
       return;
     }
 
@@ -110,7 +231,7 @@ export const BookingFormScreen = ({ route, navigation }: any) => {
         salonId: salonId,
         serviceIds: selectedServiceIds,
         date: formatDate(selectedDate),
-        time: formatTime(selectedTime),
+        time: selectedTimeSlot,
         totalPrice: calculateTotalPrice(),
         notes: notes.trim() || undefined,
       };
@@ -211,23 +332,57 @@ export const BookingFormScreen = ({ route, navigation }: any) => {
         )}
       </View>
 
-      {/* Time Selection */}
+      {/* Time Slot Selection */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Select Time *</Text>
-        <TouchableOpacity
-          style={styles.dateTimeButton}
-          onPress={() => setShowTimePicker(true)}
-        >
-          <Text style={styles.dateTimeIcon}>🕐</Text>
-          <Text style={styles.dateTimeText}>{formatTime(selectedTime)}</Text>
-        </TouchableOpacity>
-        {showTimePicker && (
-          <DateTimePicker
-            value={selectedTime}
-            mode="time"
-            display={Platform.OS === "ios" ? "spinner" : "default"}
-            onChange={onTimeChange}
-          />
+        <Text style={styles.sectionTitle}>Select Time Slot *</Text>
+        {availableTimeSlots.length === 0 ? (
+          <View style={styles.noSlotsContainer}>
+            <Text style={styles.noSlotsIcon}>🔒</Text>
+            <Text style={styles.noSlotsText}>
+              {(() => {
+                const dayName = selectedDate.toLocaleDateString("en-US", {
+                  weekday: "long",
+                });
+                let isClosed = false;
+
+                if (Array.isArray(salon?.openingHours)) {
+                  isClosed =
+                    salon.openingHours.find((h) => h.day === dayName)?.closed ||
+                    false;
+                } else if (salon?.openingHours) {
+                  const dayKey = dayName.toLowerCase();
+                  isClosed =
+                    (salon.openingHours as any)[dayKey]?.closed || false;
+                }
+
+                return isClosed
+                  ? "Salon is closed on this day"
+                  : "No available time slots for this date";
+              })()}
+            </Text>
+          </View>
+        ) : (
+          <View style={styles.timeSlotsGrid}>
+            {availableTimeSlots.map((slot) => (
+              <TouchableOpacity
+                key={slot}
+                style={[
+                  styles.timeSlot,
+                  selectedTimeSlot === slot && styles.timeSlotSelected,
+                ]}
+                onPress={() => setSelectedTimeSlot(slot)}
+              >
+                <Text
+                  style={[
+                    styles.timeSlotText,
+                    selectedTimeSlot === slot && styles.timeSlotTextSelected,
+                  ]}
+                >
+                  {slot}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         )}
       </View>
 
@@ -264,11 +419,15 @@ export const BookingFormScreen = ({ route, navigation }: any) => {
       <TouchableOpacity
         style={[
           styles.submitButton,
-          (submitting || selectedServiceIds.length === 0) &&
+          (submitting ||
+            selectedServiceIds.length === 0 ||
+            !selectedTimeSlot) &&
             styles.submitButtonDisabled,
         ]}
         onPress={handleSubmitBooking}
-        disabled={submitting || selectedServiceIds.length === 0}
+        disabled={
+          submitting || selectedServiceIds.length === 0 || !selectedTimeSlot
+        }
       >
         {submitting ? (
           <ActivityIndicator color={theme.colors.white} />
@@ -392,6 +551,49 @@ const styles = StyleSheet.create({
     ...theme.typography.body,
     color: theme.colors.text,
     flex: 1,
+  },
+  timeSlotsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: theme.spacing.sm,
+  },
+  timeSlot: {
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.lg,
+    backgroundColor: theme.colors.backgroundDark,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 2,
+    borderColor: theme.colors.backgroundDark,
+    minWidth: 80,
+    alignItems: "center",
+  },
+  timeSlotSelected: {
+    backgroundColor: "#F0EDFF",
+    borderColor: theme.colors.primary,
+  },
+  timeSlotText: {
+    ...theme.typography.body,
+    color: theme.colors.text,
+    fontWeight: "600",
+  },
+  timeSlotTextSelected: {
+    color: theme.colors.primary,
+    fontWeight: "bold",
+  },
+  noSlotsContainer: {
+    alignItems: "center",
+    padding: theme.spacing.xl,
+    backgroundColor: theme.colors.backgroundDark,
+    borderRadius: theme.borderRadius.md,
+  },
+  noSlotsIcon: {
+    fontSize: 48,
+    marginBottom: theme.spacing.md,
+  },
+  noSlotsText: {
+    ...theme.typography.body,
+    color: theme.colors.textSecondary,
+    textAlign: "center",
   },
   notesInput: {
     ...theme.typography.body,
