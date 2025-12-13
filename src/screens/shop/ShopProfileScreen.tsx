@@ -27,13 +27,7 @@ export function ShopProfileScreen() {
   };
 
   const handleMenuPress = (screen: string) => {
-    if (screen === "BusinessHours") {
-      navigation.navigate("BusinessHours");
-    } else if (screen === "StaffManagement") {
-      navigation.navigate("StaffManagement");
-    } else {
-      Alert.alert("Coming Soon", `${screen} feature will be available soon!`);
-    }
+    navigation.navigate(screen);
   };
 
   const menuSections = [
@@ -64,7 +58,7 @@ export function ShopProfileScreen() {
       title: "Support",
       items: [
         { icon: "❓", label: "Help Center", screen: "Help" },
-        { icon: "📞", label: "Contact Support", screen: "Support" },
+        { icon: "📞", label: "Contact Support", screen: "ContactSupport" },
         { icon: "⚙️", label: "Settings", screen: "Settings" },
       ],
     },
