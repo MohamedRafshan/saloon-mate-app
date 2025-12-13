@@ -1,3 +1,4 @@
+import { useFocusEffect } from "@react-navigation/native";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -11,6 +12,7 @@ import {
 } from "react-native";
 import { bookingService } from "../../api/bookingService";
 import { mockAPI } from "../../api/mock";
+import { authService, AuthUser } from "../../services/authService";
 import { theme } from "../../theme";
 import { Booking } from "../../types/Booking";
 import { Salon } from "../../types/Salon";
@@ -22,16 +24,57 @@ export function MyBookingsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [salons, setSalons] = useState<{ [key: string]: Salon }>({});
   const [services, setServices] = useState<{ [key: string]: Service }>({});
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    loadBookings();
+    checkAuthAndLoadBookings();
   }, []);
 
-  const loadBookings = async () => {
-    try {
-      // TODO: Get actual user ID from auth context/service
-      const userId = "user1"; // This should come from your auth service
+  useEffect(() => {
+    // Subscribe to auth changes
+    const unsubscribe = authService.subscribe(() => {
+      checkAuthAndLoadBookings();
+    });
 
+    return unsubscribe;
+  }, []);
+
+  // Refresh bookings when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      if (isAuthenticated && currentUser) {
+        loadBookings(currentUser.id);
+      }
+    }, [isAuthenticated, currentUser])
+  );
+
+  const checkAuthAndLoadBookings = async () => {
+    try {
+      const authenticated = await authService.isAuthenticated();
+      const user = await authService.getUser();
+
+      if (!authenticated || !user) {
+        setIsAuthenticated(false);
+        setCurrentUser(null);
+        setLoading(false);
+        setRefreshing(false);
+        return;
+      }
+
+      setIsAuthenticated(true);
+      setCurrentUser(user);
+      await loadBookings(user.id);
+    } catch (error) {
+      console.error("Failed to check authentication:", error);
+      setIsAuthenticated(false);
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  const loadBookings = async (userId: string) => {
+    try {
       const bookingsData = await bookingService.getCustomerBookings(userId);
       setBookings(bookingsData);
 
@@ -55,8 +98,8 @@ export function MyBookingsScreen() {
 
       setSalons(salonMap);
       setServices(serviceMap);
-    } catch (error) {
-      console.error("Failed to load bookings:", error);
+    } catch (err) {
+      console.error("Failed to load bookings:", err);
       Alert.alert("Error", "Failed to load bookings");
     } finally {
       setLoading(false);
@@ -66,7 +109,7 @@ export function MyBookingsScreen() {
 
   const onRefresh = () => {
     setRefreshing(true);
-    loadBookings();
+    checkAuthAndLoadBookings();
   };
 
   const handleCancelBooking = (bookingId: string) => {
@@ -82,7 +125,9 @@ export function MyBookingsScreen() {
             try {
               await bookingService.cancelBooking(bookingId);
               Alert.alert("Success", "Booking cancelled successfully");
-              loadBookings();
+              if (currentUser) {
+                loadBookings(currentUser.id);
+              }
             } catch (error) {
               Alert.alert("Error", "Failed to cancel booking");
             }
@@ -129,6 +174,21 @@ export function MyBookingsScreen() {
     );
   }
 
+  if (!isAuthenticated || !currentUser) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.title}>My Bookings</Text>
+        <View style={styles.centered}>
+          <Text style={styles.authIcon}>🔒</Text>
+          <Text style={styles.authTitle}>Login Required</Text>
+          <Text style={styles.authText}>
+            Please log in to view your bookings
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>My Bookings</Text>
@@ -156,13 +216,19 @@ export function MyBookingsScreen() {
             return (
               <View key={booking.id} style={styles.bookingCard}>
                 <View style={styles.bookingHeader}>
-                  <View>
+                  <View style={styles.bookingHeaderLeft}>
                     <Text style={styles.salonName}>
                       {salon?.name || "Loading..."}
                     </Text>
                     <Text style={styles.bookingDate}>
-                      {formatDate(booking.date)} at {booking.time}
+                      📅 {formatDate(booking.date)}
                     </Text>
+                    <Text style={styles.bookingTime}>🕐 {booking.time}</Text>
+                    {salon?.address && (
+                      <Text style={styles.bookingLocation}>
+                        📍 {salon.address}
+                      </Text>
+                    )}
                   </View>
                   <View
                     style={[
@@ -178,13 +244,51 @@ export function MyBookingsScreen() {
 
                 <View style={styles.bookingDivider} />
 
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>Booking ID:</Text>
+                  <Text style={styles.detailValue}>{booking.id}</Text>
+                </View>
+
                 <View style={styles.servicesSection}>
-                  <Text style={styles.servicesLabel}>Services:</Text>
+                  <Text style={styles.servicesLabel}>Services Booked:</Text>
                   {bookingServices.map((service) => (
-                    <Text key={service?.id} style={styles.serviceName}>
-                      • {service?.name || "Loading..."} - ${service?.price || 0}
-                    </Text>
+                    <View key={service?.id} style={styles.serviceItem}>
+                      <Text style={styles.serviceName}>
+                        • {service?.name || "Loading..."}
+                      </Text>
+                      <Text style={styles.servicePrice}>
+                        ${service?.price || 0}
+                      </Text>
+                    </View>
                   ))}
+                  {bookingServices.length > 0 && (
+                    <Text style={styles.serviceDuration}>
+                      Duration:{" "}
+                      {bookingServices.reduce((total, s) => {
+                        const duration = s?.duration || "0 min";
+                        const minutes = parseInt(duration);
+                        return total + (isNaN(minutes) ? 0 : minutes);
+                      }, 0)}{" "}
+                      minutes
+                    </Text>
+                  )}
+                </View>
+
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>Payment Status:</Text>
+                  <Text
+                    style={[
+                      styles.detailValue,
+                      {
+                        color:
+                          booking.paymentStatus === "paid"
+                            ? "#4CAF50"
+                            : "#FFA500",
+                      },
+                    ]}
+                  >
+                    {booking.paymentStatus.toUpperCase()}
+                  </Text>
                 </View>
 
                 {booking.notes && (
@@ -274,14 +378,29 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     marginBottom: theme.spacing.md,
   },
+  bookingHeaderLeft: {
+    flex: 1,
+    marginRight: theme.spacing.md,
+  },
   salonName: {
     ...theme.typography.h4,
     color: theme.colors.text,
-    marginBottom: theme.spacing.xs,
+    marginBottom: theme.spacing.sm,
   },
   bookingDate: {
     ...theme.typography.body,
     color: theme.colors.textSecondary,
+    marginBottom: theme.spacing.xs,
+  },
+  bookingTime: {
+    ...theme.typography.body,
+    color: theme.colors.textSecondary,
+    marginBottom: theme.spacing.xs,
+  },
+  bookingLocation: {
+    ...theme.typography.caption,
+    color: theme.colors.textSecondary,
+    marginTop: theme.spacing.xs,
   },
   statusBadge: {
     paddingHorizontal: theme.spacing.md,
@@ -298,6 +417,46 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.backgroundDark,
     marginBottom: theme.spacing.md,
   },
+  serviceItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: theme.spacing.xs,
+    paddingLeft: theme.spacing.sm,
+  },
+  serviceName: {
+    ...theme.typography.body,
+    color: theme.colors.textSecondary,
+    flex: 1,
+  },
+  servicePrice: {
+    ...theme.typography.body,
+    color: theme.colors.text,
+    fontWeight: "600",
+  },
+  serviceDuration: {
+    ...theme.typography.caption,
+    color: theme.colors.textSecondary,
+    marginTop: theme.spacing.xs,
+    paddingLeft: theme.spacing.sm,
+    fontStyle: "italic",
+  },
+  detailRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: theme.spacing.sm,
+    paddingVertical: theme.spacing.xs,
+  },
+  detailLabel: {
+    ...theme.typography.body,
+    color: theme.colors.textSecondary,
+  },
+  detailValue: {
+    ...theme.typography.body,
+    color: theme.colors.text,
+    fontWeight: "600",
+  },
   servicesSection: {
     marginBottom: theme.spacing.md,
   },
@@ -305,13 +464,7 @@ const styles = StyleSheet.create({
     ...theme.typography.body,
     fontWeight: "600",
     color: theme.colors.text,
-    marginBottom: theme.spacing.xs,
-  },
-  serviceName: {
-    ...theme.typography.body,
-    color: theme.colors.textSecondary,
-    marginBottom: theme.spacing.xs,
-    paddingLeft: theme.spacing.sm,
+    marginBottom: theme.spacing.sm,
   },
   notesSection: {
     backgroundColor: theme.colors.backgroundDark,
@@ -351,5 +504,21 @@ const styles = StyleSheet.create({
     color: "#F44336",
     fontSize: theme.fontSize.sm,
     fontWeight: "600",
+  },
+  authIcon: {
+    fontSize: 64,
+    marginBottom: theme.spacing.lg,
+  },
+  authTitle: {
+    ...theme.typography.h3,
+    color: theme.colors.text,
+    marginBottom: theme.spacing.md,
+    textAlign: "center",
+  },
+  authText: {
+    ...theme.typography.body,
+    color: theme.colors.textSecondary,
+    textAlign: "center",
+    paddingHorizontal: theme.spacing.lg,
   },
 });

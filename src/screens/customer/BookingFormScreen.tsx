@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { bookingService } from "../../api/bookingService";
 import { mockAPI } from "../../api/mock";
+import { authService, AuthUser } from "../../services/authService";
 import { theme } from "../../theme";
 import { Booking } from "../../types/Booking";
 import { Salon } from "../../types/Salon";
@@ -27,17 +28,21 @@ export const BookingFormScreen = ({ route, navigation }: any) => {
   const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([]);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>("");
-  const [availableTimeSlots, setAvailableTimeSlots] = useState<string[]>([]);
+  const [availableTimeSlots, setAvailableTimeSlots] = useState<
+    { time: string; isBooked: boolean }[]
+  >([]);
   const [existingBookings, setExistingBookings] = useState<Booking[]>([]);
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   // Date picker visibility
   const [showDatePicker, setShowDatePicker] = useState(false);
 
   useEffect(() => {
-    loadData();
+    checkAuthAndLoadData();
   }, [salonId]);
 
   useEffect(() => {
@@ -46,8 +51,29 @@ export const BookingFormScreen = ({ route, navigation }: any) => {
     }
   }, [selectedDate, salon, existingBookings]);
 
-  const loadData = async () => {
+  const checkAuthAndLoadData = async () => {
     try {
+      const authenticated = await authService.isAuthenticated();
+      const user = await authService.getUser();
+
+      if (!authenticated || !user) {
+        setIsAuthenticated(false);
+        Alert.alert(
+          "Authentication Required",
+          "Please log in to book an appointment",
+          [
+            {
+              text: "OK",
+              onPress: () => navigation.goBack(),
+            },
+          ]
+        );
+        return;
+      }
+
+      setIsAuthenticated(true);
+      setCurrentUser(user);
+
       const [salonData, servicesData, bookingsData] = await Promise.all([
         mockAPI.getSalonById(salonId),
         mockAPI.getServicesBySalonId(salonId),
@@ -98,7 +124,7 @@ export const BookingFormScreen = ({ route, navigation }: any) => {
     const [closeHour, closeMinute] = openingHours.close.split(":").map(Number);
 
     // Generate 30-minute time slots
-    const slots: string[] = [];
+    const slots: { time: string; isBooked: boolean }[] = [];
     let currentHour = openHour;
     let currentMinute = openMinute;
 
@@ -113,9 +139,8 @@ export const BookingFormScreen = ({ route, navigation }: any) => {
       // Check if this time slot conflicts with existing bookings
       const isBooked = isTimeSlotBooked(timeSlot);
 
-      if (!isBooked) {
-        slots.push(timeSlot);
-      }
+      // Add all time slots with their booking status
+      slots.push({ time: timeSlot, isBooked });
 
       // Increment by 30 minutes
       currentMinute += 30;
@@ -223,11 +248,14 @@ export const BookingFormScreen = ({ route, navigation }: any) => {
     setSubmitting(true);
 
     try {
-      // TODO: Get actual user ID from auth context/service
-      const userId = "user1"; // This should come from your auth service
+      if (!currentUser) {
+        Alert.alert("Error", "User session expired. Please log in again.");
+        navigation.goBack();
+        return;
+      }
 
       const bookingData = {
-        customerId: userId,
+        customerId: currentUser.id,
         salonId: salonId,
         serviceIds: selectedServiceIds,
         date: formatDate(selectedDate),
@@ -255,6 +283,24 @@ export const BookingFormScreen = ({ route, navigation }: any) => {
     return (
       <View style={styles.centered}>
         <ActivityIndicator size="large" color={theme.colors.primary} />
+      </View>
+    );
+  }
+
+  if (!isAuthenticated || !currentUser) {
+    return (
+      <View style={styles.centered}>
+        <Text style={styles.errorIcon}>🔒</Text>
+        <Text style={styles.errorTitle}>Authentication Required</Text>
+        <Text style={styles.errorText}>
+          You must be logged in to book an appointment
+        </Text>
+        <TouchableOpacity
+          style={styles.errorButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Text style={styles.errorButtonText}>Go Back</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -365,21 +411,28 @@ export const BookingFormScreen = ({ route, navigation }: any) => {
           <View style={styles.timeSlotsGrid}>
             {availableTimeSlots.map((slot) => (
               <TouchableOpacity
-                key={slot}
+                key={slot.time}
                 style={[
                   styles.timeSlot,
-                  selectedTimeSlot === slot && styles.timeSlotSelected,
+                  selectedTimeSlot === slot.time && styles.timeSlotSelected,
+                  slot.isBooked && styles.timeSlotBooked,
                 ]}
-                onPress={() => setSelectedTimeSlot(slot)}
+                onPress={() => !slot.isBooked && setSelectedTimeSlot(slot.time)}
+                disabled={slot.isBooked}
               >
                 <Text
                   style={[
                     styles.timeSlotText,
-                    selectedTimeSlot === slot && styles.timeSlotTextSelected,
+                    selectedTimeSlot === slot.time &&
+                      styles.timeSlotTextSelected,
+                    slot.isBooked && styles.timeSlotTextBooked,
                   ]}
                 >
-                  {slot}
+                  {slot.time}
                 </Text>
+                {slot.isBooked && (
+                  <Text style={styles.bookedLabel}>Booked</Text>
+                )}
               </TouchableOpacity>
             ))}
           </View>
@@ -580,6 +633,20 @@ const styles = StyleSheet.create({
     color: theme.colors.primary,
     fontWeight: "bold",
   },
+  timeSlotBooked: {
+    backgroundColor: "#FFE5E5",
+    borderColor: "#FFCCCB",
+    opacity: 0.6,
+  },
+  timeSlotTextBooked: {
+    color: "#999",
+    textDecorationLine: "line-through",
+  },
+  bookedLabel: {
+    fontSize: 10,
+    color: "#F44336",
+    marginTop: 2,
+  },
   noSlotsContainer: {
     alignItems: "center",
     padding: theme.spacing.xl,
@@ -660,5 +727,33 @@ const styles = StyleSheet.create({
   },
   bottomPadding: {
     height: theme.spacing.xl,
+  },
+  errorIcon: {
+    fontSize: 64,
+    marginBottom: theme.spacing.lg,
+  },
+  errorTitle: {
+    ...theme.typography.h3,
+    color: theme.colors.text,
+    marginBottom: theme.spacing.md,
+    textAlign: "center",
+  },
+  errorText: {
+    ...theme.typography.body,
+    color: theme.colors.textSecondary,
+    textAlign: "center",
+    marginBottom: theme.spacing.xl,
+    paddingHorizontal: theme.spacing.lg,
+  },
+  errorButton: {
+    backgroundColor: theme.colors.primary,
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.xl,
+    borderRadius: theme.borderRadius.lg,
+  },
+  errorButtonText: {
+    color: theme.colors.white,
+    fontSize: theme.fontSize.md,
+    fontWeight: "600",
   },
 });
