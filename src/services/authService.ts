@@ -13,8 +13,11 @@ export interface AuthUser {
   businessName?: string;
   description?: string;
   category?: string;
-  address?: string;
+  categories?: string[];
+  district?: string;
   city?: string;
+  address?: string;
+  fullAddress?: string;
   latitude?: number;
   longitude?: number;
   amenities?: string[];
@@ -133,8 +136,11 @@ export const authService = {
       businessName: userData.businessName || "",
       description: userData.description || "",
       category: userData.category || "",
-      address: userData.address || "",
+      categories: userData.categories || [],
+      district: userData.district || "",
       city: userData.city || "",
+      address: userData.address || "",
+      fullAddress: userData.fullAddress || "",
       latitude: userData.latitude,
       longitude: userData.longitude,
       amenities: userData.amenities || [],

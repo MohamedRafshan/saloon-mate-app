@@ -39,9 +39,10 @@ export const BusinessRegisterScreen = () => {
   // Business Information
   const [businessName, setBusinessName] = useState("");
   const [description, setDescription] = useState("");
-  const [category, setCategory] = useState("");
-  const [address, setAddress] = useState("");
-  const [city, setCity] = useState("");
+  const [categories, setCategories] = useState<string[]>([]);
+  const [selectedDistrict, setSelectedDistrict] = useState("");
+  const [selectedTown, setSelectedTown] = useState("");
+  const [addressDetails, setAddressDetails] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
 
@@ -64,21 +65,215 @@ export const BusinessRegisterScreen = () => {
 
   const [loading, setLoading] = useState(false);
 
+  const categoryOptions = [
+    "Hair Salon",
+    "Barber",
+    "Beauty Salon",
+    "Spa",
+    "Nail Salon",
+    "Massage",
+  ];
+
+  // Sri Lankan Districts and Towns
+  const sriLankaData: { [key: string]: string[] } = {
+    Colombo: [
+      "Colombo 1",
+      "Colombo 2",
+      "Colombo 3",
+      "Colombo 4",
+      "Colombo 5",
+      "Colombo 6",
+      "Colombo 7",
+      "Colombo 8",
+      "Dehiwala",
+      "Mount Lavinia",
+      "Moratuwa",
+      "Nugegoda",
+      "Kotte",
+      "Maharagama",
+      "Piliyandala",
+    ],
+    Gampaha: [
+      "Gampaha",
+      "Negombo",
+      "Katunayake",
+      "Ja-Ela",
+      "Wattala",
+      "Kelaniya",
+      "Minuwangoda",
+      "Kadawatha",
+      "Ragama",
+      "Veyangoda",
+      "Divulapitiya",
+      "Nittambuwa",
+    ],
+    Kalutara: [
+      "Kalutara",
+      "Panadura",
+      "Horana",
+      "Beruwala",
+      "Aluthgama",
+      "Matugama",
+      "Wadduwa",
+      "Bandaragama",
+    ],
+    Kandy: [
+      "Kandy",
+      "Peradeniya",
+      "Gampola",
+      "Nawalapitiya",
+      "Katugastota",
+      "Akurana",
+      "Kadugannawa",
+      "Wattegama",
+    ],
+    Matale: [
+      "Matale",
+      "Dambulla",
+      "Sigiriya",
+      "Galewela",
+      "Ukuwela",
+      "Rattota",
+    ],
+    "Nuwara Eliya": [
+      "Nuwara Eliya",
+      "Hatton",
+      "Nanuoya",
+      "Talawakelle",
+      "Bandarawela",
+      "Haputale",
+    ],
+    Galle: [
+      "Galle",
+      "Hikkaduwa",
+      "Ambalangoda",
+      "Unawatuna",
+      "Bentota",
+      "Elpitiya",
+      "Baddegama",
+    ],
+    Matara: [
+      "Matara",
+      "Weligama",
+      "Mirissa",
+      "Dikwella",
+      "Deniyaya",
+      "Akuressa",
+    ],
+    Hambantota: [
+      "Hambantota",
+      "Tangalle",
+      "Tissamaharama",
+      "Ambalantota",
+      "Beliatta",
+    ],
+    Jaffna: [
+      "Jaffna",
+      "Nallur",
+      "Chavakachcheri",
+      "Point Pedro",
+      "Karainagar",
+      "Kayts",
+    ],
+    Kilinochchi: ["Kilinochchi", "Pallai", "Paranthan"],
+    Mannar: ["Mannar", "Nanattan", "Madhu"],
+    Vavuniya: ["Vavuniya", "Nedunkeni", "Omanthai"],
+    Mullaitivu: ["Mullaitivu", "Oddusuddan", "Puthukkudiyiruppu"],
+    Batticaloa: [
+      "Batticaloa",
+      "Kattankudy",
+      "Eravur",
+      "Kaluwanchikudy",
+      "Valachchenai",
+    ],
+    Ampara: [
+      "Ampara",
+      "Kalmunai",
+      "Sainthamaruthu",
+      "Akkaraipattu",
+      "Pottuvil",
+    ],
+    Trincomalee: ["Trincomalee", "Kinniya", "Mutur", "Kuchchaveli"],
+    Kurunegala: [
+      "Kurunegala",
+      "Kuliyapitiya",
+      "Narammala",
+      "Wariyapola",
+      "Pannala",
+      "Melsiripura",
+      "Polgahawela",
+    ],
+    Puttalam: ["Puttalam", "Chilaw", "Wennappuwa", "Anamaduwa", "Nattandiya"],
+    Anuradhapura: [
+      "Anuradhapura",
+      "Medawachchiya",
+      "Kekirawa",
+      "Tambuttegama",
+      "Eppawala",
+    ],
+    Polonnaruwa: ["Polonnaruwa", "Kaduruwela", "Medirigiriya", "Hingurakgoda"],
+    Badulla: [
+      "Badulla",
+      "Bandarawela",
+      "Haputale",
+      "Welimada",
+      "Mahiyanganaya",
+      "Hali Ela",
+    ],
+    Moneragala: ["Moneragala", "Bibile", "Wellawaya", "Buttala"],
+    Ratnapura: [
+      "Ratnapura",
+      "Embilipitiya",
+      "Balangoda",
+      "Pelmadulla",
+      "Eheliyagoda",
+      "Kuruwita",
+    ],
+    Kegalle: [
+      "Kegalle",
+      "Mawanella",
+      "Warakapola",
+      "Rambukkana",
+      "Ruwanwella",
+      "Dehiowita",
+    ],
+  };
+
+  const districts = Object.keys(sriLankaData);
+  const availableTowns = selectedDistrict ? sriLankaData[selectedDistrict] : [];
+
+  const handleDistrictChange = (district: string) => {
+    setSelectedDistrict(district);
+    setSelectedTown(""); // Reset town when district changes
+  };
+
+  const toggleCategory = (category: string) => {
+    if (categories.includes(category)) {
+      setCategories(categories.filter((c) => c !== category));
+    } else {
+      setCategories([...categories, category]);
+    }
+  };
+
   const handleRegister = async () => {
     // Validate required fields
     if (
       !businessName ||
       !description ||
-      !category ||
+      categories.length === 0 ||
       !ownerName ||
       !email ||
       !phone ||
-      !address ||
-      !city ||
+      !selectedDistrict ||
+      !selectedTown ||
+      !addressDetails ||
       !password ||
       !confirmPassword
     ) {
-      Alert.alert("Error", "Please fill in all required fields");
+      Alert.alert(
+        "Error",
+        "Please fill in all required fields and select at least one category"
+      );
       return;
     }
 
@@ -121,9 +316,12 @@ export const BusinessRegisterScreen = () => {
           role: "business",
           businessName: businessName,
           description: description,
-          category: category,
-          address: address,
-          city: city,
+          category: categories.join(", "),
+          categories: categories,
+          district: selectedDistrict,
+          city: selectedTown,
+          address: addressDetails,
+          fullAddress: `${addressDetails}, ${selectedTown}, ${selectedDistrict}`,
           latitude: latitude ? parseFloat(latitude) : undefined,
           longitude: longitude ? parseFloat(longitude) : undefined,
           amenities: amenities,
@@ -190,29 +388,101 @@ export const BusinessRegisterScreen = () => {
               placeholderTextColor="#999"
             />
 
-            <TextInput
-              style={styles.input}
-              placeholder="Category (e.g., Hair Salon, Barber, Beauty Salon) *"
-              value={category}
-              onChangeText={setCategory}
-              autoCapitalize="words"
-              placeholderTextColor="#999"
-            />
+            <Text style={styles.sectionTitle}>Category *</Text>
+            <Text style={styles.helperText}>
+              Select all that apply to your business
+            </Text>
+            <View style={styles.checkboxContainer}>
+              {categoryOptions.map((cat) => (
+                <TouchableOpacity
+                  key={cat}
+                  style={styles.checkbox}
+                  onPress={() => toggleCategory(cat)}
+                >
+                  <Ionicons
+                    name={
+                      categories.includes(cat) ? "checkbox" : "square-outline"
+                    }
+                    size={24}
+                    color={categories.includes(cat) ? "#6C5CE7" : "#999"}
+                  />
+                  <Text style={styles.checkboxLabel}>{cat}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <Text style={styles.sectionTitle}>Location *</Text>
+
+            <Text style={styles.label}>District *</Text>
+            <View style={styles.pickerContainer}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.horizontalScroll}
+              >
+                {districts.map((district) => (
+                  <TouchableOpacity
+                    key={district}
+                    style={[
+                      styles.districtButton,
+                      selectedDistrict === district &&
+                        styles.districtButtonActive,
+                    ]}
+                    onPress={() => handleDistrictChange(district)}
+                  >
+                    <Text
+                      style={[
+                        styles.districtButtonText,
+                        selectedDistrict === district &&
+                          styles.districtButtonTextActive,
+                      ]}
+                    >
+                      {district}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+
+            {selectedDistrict && (
+              <>
+                <Text style={styles.label}>Town/City *</Text>
+                <View style={styles.pickerContainer}>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    style={styles.horizontalScroll}
+                  >
+                    {availableTowns.map((town) => (
+                      <TouchableOpacity
+                        key={town}
+                        style={[
+                          styles.districtButton,
+                          selectedTown === town && styles.districtButtonActive,
+                        ]}
+                        onPress={() => setSelectedTown(town)}
+                      >
+                        <Text
+                          style={[
+                            styles.districtButtonText,
+                            selectedTown === town &&
+                              styles.districtButtonTextActive,
+                          ]}
+                        >
+                          {town}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </View>
+              </>
+            )}
 
             <TextInput
               style={styles.input}
-              placeholder="Business Address *"
-              value={address}
-              onChangeText={setAddress}
-              autoCapitalize="words"
-              placeholderTextColor="#999"
-            />
-
-            <TextInput
-              style={styles.input}
-              placeholder="City *"
-              value={city}
-              onChangeText={setCity}
+              placeholder="Address Details (Street, Building No, etc.) *"
+              value={addressDetails}
+              onChangeText={setAddressDetails}
               autoCapitalize="words"
               placeholderTextColor="#999"
             />
@@ -457,6 +727,40 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#000",
     marginLeft: 8,
+  },
+  label: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#000",
+    marginBottom: 8,
+    marginTop: 4,
+  },
+  pickerContainer: {
+    marginBottom: 16,
+  },
+  horizontalScroll: {
+    flexGrow: 0,
+  },
+  districtButton: {
+    backgroundColor: "#F5F5F5",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+  },
+  districtButtonActive: {
+    backgroundColor: "#6C5CE7",
+    borderColor: "#6C5CE7",
+  },
+  districtButtonText: {
+    fontSize: 14,
+    color: "#666",
+    fontWeight: "500",
+  },
+  districtButtonTextActive: {
+    color: "#FFFFFF",
   },
   registerButton: {
     backgroundColor: "#6C5CE7",
