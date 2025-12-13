@@ -1,15 +1,18 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const TOKEN_KEY = '@auth_token';
-const USER_KEY = '@user_data';
+const TOKEN_KEY = "@auth_token";
+const USER_KEY = "@user_data";
 
 export interface AuthUser {
   id: string;
   name: string;
   email: string;
   phone: string;
-  role: 'customer' | 'business';
+  role: "customer" | "business";
   businessId?: string;
+  businessName?: string;
+  address?: string;
+  city?: string;
 }
 
 export interface AuthToken {
@@ -29,7 +32,7 @@ export const authService = {
       await AsyncStorage.setItem(USER_KEY, JSON.stringify(user));
       this.notifyListeners();
     } catch (error) {
-      console.error('Error saving auth:', error);
+      console.error("Error saving auth:", error);
     }
   },
 
@@ -38,7 +41,7 @@ export const authService = {
     try {
       return await AsyncStorage.getItem(TOKEN_KEY);
     } catch (error) {
-      console.error('Error getting token:', error);
+      console.error("Error getting token:", error);
       return null;
     }
   },
@@ -49,7 +52,7 @@ export const authService = {
       const userData = await AsyncStorage.getItem(USER_KEY);
       return userData ? JSON.parse(userData) : null;
     } catch (error) {
-      console.error('Error getting user:', error);
+      console.error("Error getting user:", error);
       return null;
     }
   },
@@ -67,7 +70,7 @@ export const authService = {
       await AsyncStorage.removeItem(USER_KEY);
       this.notifyListeners();
     } catch (error) {
-      console.error('Error clearing auth:', error);
+      console.error("Error clearing auth:", error);
     }
   },
 
@@ -84,21 +87,21 @@ export const authService = {
 
   // Notify all listeners of auth state change
   notifyListeners() {
-    authListeners.forEach(listener => listener());
+    authListeners.forEach((listener) => listener());
   },
 
   // Mock login
   async login(email: string, password: string): Promise<AuthToken> {
     // Mock API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
     const mockToken = `mock_token_${Date.now()}`;
     const mockUser: AuthUser = {
-      id: 'user_' + Date.now(),
-      name: 'Test User',
+      id: "user_" + Date.now(),
+      name: "Test User",
       email: email,
-      phone: '+1 234 567 8900',
-      role: 'customer',
+      phone: "+1 234 567 8900",
+      role: "customer",
     };
 
     await this.saveAuth(mockToken, mockUser);
@@ -106,19 +109,23 @@ export const authService = {
   },
 
   // Mock register
-  async register(userData: Partial<AuthUser>, password: string): Promise<AuthToken> {
+  async register(
+    userData: Partial<AuthUser>,
+    password: string
+  ): Promise<AuthToken> {
     // Mock API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
     const mockToken = `mock_token_${Date.now()}`;
     const mockUser: AuthUser = {
-      id: 'user_' + Date.now(),
-      name: userData.name || 'New User',
-      businessName: (userData as any).businessName || '',
-      email: userData.email || '',
-      phone: userData.phone || '',
-      role: userData.role || 'customer',
-      businessId: userData.role === 'business' ? 'business_' + Date.now() : undefined,
+      id: "user_" + Date.now(),
+      name: userData.name || "New User",
+      businessName: (userData as any).businessName || "",
+      email: userData.email || "",
+      phone: userData.phone || "",
+      role: userData.role || "customer",
+      businessId:
+        userData.role === "business" ? "business_" + Date.now() : undefined,
     };
 
     await this.saveAuth(mockToken, mockUser);
