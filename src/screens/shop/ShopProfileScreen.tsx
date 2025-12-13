@@ -1,3 +1,4 @@
+import { useNavigation } from "@react-navigation/native";
 import React from "react";
 import {
   Alert,
@@ -10,6 +11,8 @@ import {
 import { authService } from "../../services/authService";
 
 export function ShopProfileScreen() {
+  const navigation = useNavigation<any>();
+
   const handleLogout = () => {
     Alert.alert("Logout", "Are you sure you want to logout?", [
       { text: "Cancel", style: "cancel" },
@@ -23,14 +26,24 @@ export function ShopProfileScreen() {
     ]);
   };
 
+  const handleMenuPress = (screen: string) => {
+    if (screen === "BusinessHours") {
+      navigation.navigate("BusinessHours");
+    } else if (screen === "StaffManagement") {
+      navigation.navigate("StaffManagement");
+    } else {
+      Alert.alert("Coming Soon", `${screen} feature will be available soon!`);
+    }
+  };
+
   const menuSections = [
     {
       title: "Business Settings",
       items: [
         { icon: "🏢", label: "Business Info", screen: "BusinessInfo" },
-        { icon: "⏰", label: "Opening Hours", screen: "OpeningHours" },
+        { icon: "⏰", label: "Opening Hours", screen: "BusinessHours" },
         { icon: "📍", label: "Location", screen: "Location" },
-        { icon: "👥", label: "Manage Staff", screen: "Staff" },
+        { icon: "👥", label: "Manage Staff", screen: "StaffManagement" },
       ],
     },
     {
@@ -91,7 +104,7 @@ export function ShopProfileScreen() {
               <TouchableOpacity
                 key={itemIndex}
                 style={styles.menuItem}
-                onPress={() => console.log("Navigate to:", item.screen)}
+                onPress={() => handleMenuPress(item.screen)}
               >
                 <Text style={styles.menuIcon}>{item.icon}</Text>
                 <Text style={styles.menuLabel}>{item.label}</Text>

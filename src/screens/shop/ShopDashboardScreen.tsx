@@ -1,3 +1,4 @@
+import { useNavigation } from "@react-navigation/native";
 import React from "react";
 import {
   ScrollView,
@@ -8,6 +9,7 @@ import {
 } from "react-native";
 
 export function ShopDashboardScreen() {
+  const navigation = useNavigation<any>();
   const stats = [
     { label: "Today's Bookings", value: "12", icon: "📅" },
     { label: "This Week", value: "48", icon: "📊" },
@@ -74,19 +76,31 @@ export function ShopDashboardScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Quick Actions</Text>
           <View style={styles.actionsGrid}>
-            <TouchableOpacity style={styles.actionButton}>
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => navigation.navigate("ShopServices")}
+            >
               <Text style={styles.actionIcon}>➕</Text>
               <Text style={styles.actionText}>Add Service</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.actionButton}>
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => navigation.navigate("StaffManagement")}
+            >
               <Text style={styles.actionIcon}>👥</Text>
               <Text style={styles.actionText}>Manage Staff</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.actionButton}>
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => navigation.navigate("BusinessHours")}
+            >
               <Text style={styles.actionIcon}>⏰</Text>
               <Text style={styles.actionText}>Set Hours</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.actionButton}>
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => navigation.navigate("Analytics")}
+            >
               <Text style={styles.actionIcon}>📈</Text>
               <Text style={styles.actionText}>Analytics</Text>
             </TouchableOpacity>
