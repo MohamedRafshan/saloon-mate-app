@@ -216,9 +216,11 @@ export const BusinessRegisterScreen = () => {
           </View>
 
           <View style={styles.linkContainer}>
-            <Text style={styles.linkQuestion}>Already have an account?</Text>
+            <Text style={styles.linkQuestion}>
+              Already have a business account?
+            </Text>
             <TouchableOpacity onPress={() => navigation.navigate("Login")}>
-              <Text style={styles.linkText}>Log in</Text>
+              <Text style={styles.linkText}>Log in as business</Text>
             </TouchableOpacity>
           </View>
 

@@ -25,6 +25,9 @@ export const LoginScreen = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [accountType, setAccountType] = useState<"customer" | "business">(
+    "customer"
+  );
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -56,11 +59,56 @@ export const LoginScreen = () => {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
+        <TouchableOpacity
+          style={styles.closeButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Ionicons name="close" size={28} color="#000000" />
+        </TouchableOpacity>
+
         <View style={styles.form}>
           <Text style={styles.title}>Welcome back</Text>
           <Text style={styles.subtitle}>
-            Log in to book and manage your appointments
+            Log in to{" "}
+            {accountType === "business"
+              ? "manage your business"
+              : "book and manage your appointments"}
           </Text>
+
+          <View style={styles.accountTypeSelector}>
+            <TouchableOpacity
+              style={[
+                styles.accountTypeButton,
+                accountType === "customer" && styles.accountTypeButtonActive,
+              ]}
+              onPress={() => setAccountType("customer")}
+            >
+              <Text
+                style={[
+                  styles.accountTypeText,
+                  accountType === "customer" && styles.accountTypeTextActive,
+                ]}
+              >
+                Customer
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.accountTypeButton,
+                accountType === "business" && styles.accountTypeButtonActive,
+              ]}
+              onPress={() => setAccountType("business")}
+            >
+              <Text
+                style={[
+                  styles.accountTypeText,
+                  accountType === "business" && styles.accountTypeTextActive,
+                ]}
+              >
+                Business
+              </Text>
+            </TouchableOpacity>
+          </View>
 
           <View style={styles.inputContainer}>
             <TextInput
@@ -105,11 +153,13 @@ export const LoginScreen = () => {
           </View>
 
           <View style={styles.linkContainer}>
-            <Text style={styles.linkQuestion}>Have a business?</Text>
+            <Text style={styles.linkQuestion}>
+              {accountType === "customer"
+                ? "Have a business?"
+                : "Want to create a business account?"}
+            </Text>
             <TouchableOpacity
-              onPress={() =>
-                navigation.navigate("Register", { accountType: "business" })
-              }
+              onPress={() => navigation.navigate("BusinessRegister")}
             >
               <Text style={styles.linkText}>Create business account</Text>
             </TouchableOpacity>
@@ -163,7 +213,31 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#666666",
     lineHeight: 24,
-    marginBottom: 40,
+    marginBottom: 24,
+  },
+  accountTypeSelector: {
+    flexDirection: "row",
+    backgroundColor: "#F5F5F5",
+    borderRadius: 30,
+    padding: 4,
+    marginBottom: 32,
+  },
+  accountTypeButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 26,
+    alignItems: "center",
+  },
+  accountTypeButtonActive: {
+    backgroundColor: "#000000",
+  },
+  accountTypeText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#666666",
+  },
+  accountTypeTextActive: {
+    color: "#FFFFFF",
   },
   inputContainer: {
     marginBottom: 24,
