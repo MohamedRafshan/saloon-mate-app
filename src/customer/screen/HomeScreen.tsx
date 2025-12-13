@@ -1,20 +1,20 @@
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import React, { useEffect, useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
   ActivityIndicator,
-  TouchableOpacity,
-  Image,
   Dimensions,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
 import { mockAPI } from "../../api/mock";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { Salon } from "../../types/Salon";
 import { HomeStackParamList } from "../../navigation/HomeStack";
 import { theme } from "../../theme";
+import { Salon } from "../../types/Salon";
 
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = width * 0.65;
