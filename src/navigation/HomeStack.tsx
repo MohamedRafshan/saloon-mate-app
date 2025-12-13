@@ -1,7 +1,7 @@
 import { createStackNavigator } from "@react-navigation/stack";
 import React from "react";
-import { HomeScreen } from "../customer/screen/HomeScreen";
-import { SalonProfileScreen } from "../customer/screen/SalonProfileScreen";
+import { HomeScreen } from "../screens/customer/HomeScreen";
+import { SalonProfileScreen } from "../screens/customer/SalonProfileScreen";
 
 export type HomeStackParamList = {
   Home: undefined;

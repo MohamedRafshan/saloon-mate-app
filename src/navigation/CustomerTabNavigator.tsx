@@ -1,9 +1,9 @@
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import React from "react";
 import { Text } from "react-native";
-import { MyBookingsScreen } from "../customer/screen/MyBookingsScreen";
-import { SearchScreen } from "../customer/screen/SearchScreen";
-import { AuthStack } from "./AuthStack";
+import { MyBookingsScreen } from "../screens/customer/MyBookingsScreen";
+import { SearchScreen } from "../screens/customer/SearchScreen";
+import { UserProfileScreen } from "../screens/customer/UserProfileScreen";
 import { HomeStack } from "./HomeStack";
 
 const Tab = createBottomTabNavigator();
@@ -30,7 +30,7 @@ export function CustomerTabNavigator() {
       />
       <Tab.Screen
         name="ProfileTab"
-        component={AuthStack}
+        component={UserProfileScreen}
         options={{ tabBarIcon: () => <Text style={{ fontSize: 24 }}>👤</Text> }}
       />
     </Tab.Navigator>

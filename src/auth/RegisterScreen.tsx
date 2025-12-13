@@ -1,5 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
-import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
+import {
+  RouteProp,
+  useNavigation,
+  useNavigationState,
+  useRoute,
+} from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import React, { useState } from "react";
 import {
@@ -26,6 +31,19 @@ export const RegisterScreen = () => {
   const route = useRoute<RegisterScreenRouteProp>();
   const accountType = route.params?.accountType || "customer";
 
+  const canGoBack = useNavigationState((state) => state.index > 0);
+
+  const handleBack = () => {
+    if (canGoBack) {
+      navigation.goBack();
+    } else {
+      // Navigate to customer home when no screen to go back to
+      (navigation as any).navigate("CustomerTabNavigator", {
+        screen: "HomeTab",
+      });
+    }
+  };
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -51,19 +69,26 @@ export const RegisterScreen = () => {
 
     setLoading(true);
     try {
-      // Mock registration - replace with real API call
-      setTimeout(() => {
-        Alert.alert(
-          "Success",
-          `${
-            accountType === "business" ? "Business" : "Customer"
-          } account created successfully!`,
-          [{ text: "OK", onPress: () => navigation.navigate("Login") }]
-        );
-        setLoading(false);
-      }, 1000);
+      const { authService } = await import("../services/authService");
+      await authService.register(
+        {
+          name: name,
+          email: email,
+          phone: phone,
+          role: accountType,
+        },
+        password
+      );
+
+      Alert.alert(
+        "Success",
+        `${
+          accountType === "business" ? "Business" : "Customer"
+        } account created successfully!`
+      );
     } catch (error) {
       Alert.alert("Error", "Registration failed. Please try again.");
+    } finally {
       setLoading(false);
     }
   };
@@ -80,10 +105,7 @@ export const RegisterScreen = () => {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
+        <TouchableOpacity style={styles.backButton} onPress={handleBack}>
           <Ionicons name="arrow-back" size={28} color="#000000" />
         </TouchableOpacity>
 

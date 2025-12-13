@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useNavigationState } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import React, { useState } from "react";
 import {
@@ -22,6 +22,19 @@ type BusinessRegisterScreenNavigationProp = NativeStackNavigationProp<
 
 export const BusinessRegisterScreen = () => {
   const navigation = useNavigation<BusinessRegisterScreenNavigationProp>();
+
+  const canGoBack = useNavigationState((state) => state.index > 0);
+
+  const handleBack = () => {
+    if (canGoBack) {
+      navigation.goBack();
+    } else {
+      // Navigate to customer home when no screen to go back to
+      (navigation as any).navigate("CustomerTabNavigator", {
+        screen: "HomeTab",
+      });
+    }
+  };
 
   const [businessName, setBusinessName] = useState("");
   const [ownerName, setOwnerName] = useState("");
@@ -60,17 +73,27 @@ export const BusinessRegisterScreen = () => {
 
     setLoading(true);
     try {
-      // Mock registration - replace with real API call
-      setTimeout(() => {
-        Alert.alert(
-          "Success",
-          "Business account created successfully! We will review your application.",
-          [{ text: "OK", onPress: () => navigation.navigate("Login") }]
-        );
-        setLoading(false);
-      }, 1000);
+      const { authService } = await import("../services/authService");
+      await authService.register(
+        {
+          name: ownerName,
+          email: email,
+          phone: phone,
+          role: "business",
+          businessName: businessName,
+          address: address,
+          city: city,
+        },
+        password
+      );
+
+      Alert.alert(
+        "Success",
+        "Business account created successfully! You can now access your dashboard."
+      );
     } catch (error) {
       Alert.alert("Error", "Registration failed. Please try again.");
+    } finally {
       setLoading(false);
     }
   };
@@ -87,10 +110,7 @@ export const BusinessRegisterScreen = () => {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
+        <TouchableOpacity style={styles.backButton} onPress={handleBack}>
           <Ionicons name="arrow-back" size={28} color="#000000" />
         </TouchableOpacity>
 

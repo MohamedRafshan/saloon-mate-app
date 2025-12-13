@@ -34,13 +34,12 @@ export const LoginScreen = () => {
 
     setLoading(true);
     try {
-      // Mock login - replace with real API call
-      setTimeout(() => {
-        Alert.alert("Success", "Login successful!");
-        setLoading(false);
-      }, 1000);
+      const { authService } = await import("../services/authService");
+      await authService.login(email, password);
+      Alert.alert("Success", "Login successful!");
     } catch (error) {
       Alert.alert("Error", "Invalid email or password");
+    } finally {
       setLoading(false);
     }
   };
@@ -57,13 +56,6 @@ export const LoginScreen = () => {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        <TouchableOpacity
-          style={styles.closeButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Ionicons name="close" size={28} color="#000000" />
-        </TouchableOpacity>
-
         <View style={styles.form}>
           <Text style={styles.title}>Welcome back</Text>
           <Text style={styles.subtitle}>
