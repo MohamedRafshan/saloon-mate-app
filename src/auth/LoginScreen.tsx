@@ -38,7 +38,7 @@ export const LoginScreen = () => {
     setLoading(true);
     try {
       const { authService } = await import("../services/authService");
-      await authService.login(email, password);
+      await authService.login(email, password, accountType);
       Alert.alert("Success", "Login successful!");
     } catch {
       Alert.alert("Error", "Invalid email or password");

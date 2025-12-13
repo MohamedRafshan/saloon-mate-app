@@ -99,17 +99,23 @@ export const authService = {
   },
 
   // Mock login
-  async login(email: string, password: string): Promise<AuthToken> {
+  async login(
+    email: string,
+    password: string,
+    role: "customer" | "business" = "customer"
+  ): Promise<AuthToken> {
     // Mock API call
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
     const mockToken = `mock_token_${Date.now()}`;
     const mockUser: AuthUser = {
       id: "user_" + Date.now(),
-      name: "Test User",
+      name: role === "business" ? "Business Owner" : "Test User",
       email: email,
       phone: "+1 234 567 8900",
-      role: "customer",
+      role: role,
+      businessId: role === "business" ? "business_" + Date.now() : undefined,
+      businessName: role === "business" ? "Test Business" : undefined,
     };
 
     await this.saveAuth(mockToken, mockUser);
