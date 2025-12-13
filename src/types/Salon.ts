@@ -2,10 +2,15 @@ export interface Salon {
   id: string;
   name: string;
   address: string;
+  city?: string;
   rating: number;
   reviewCount: number;
   image: string;
   category?: string;
+  location?: {
+    latitude: number;
+    longitude: number;
+  };
   latitude?: number;
   longitude?: number;
   openingHours?: OpeningHours[];

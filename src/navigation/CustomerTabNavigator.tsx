@@ -3,7 +3,7 @@ import React from "react";
 import { Text } from "react-native";
 import { MyBookingsScreen } from "../customer/screen/MyBookingsScreen";
 import { SearchScreen } from "../customer/screen/SearchScreen";
-import { UserProfileScreen } from "../customer/screen/UserProfileScreen";
+import { AuthStack } from "./AuthStack";
 import { HomeStack } from "./HomeStack";
 
 const Tab = createBottomTabNavigator();
@@ -30,7 +30,7 @@ export function CustomerTabNavigator() {
       />
       <Tab.Screen
         name="ProfileTab"
-        component={UserProfileScreen}
+        component={AuthStack}
         options={{ tabBarIcon: () => <Text style={{ fontSize: 24 }}>👤</Text> }}
       />
     </Tab.Navigator>

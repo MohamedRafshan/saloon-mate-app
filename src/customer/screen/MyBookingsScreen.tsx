@@ -1,5 +1,47 @@
-import React from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import React, { useState } from "react";
+import {
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { theme } from "../../theme";
+
+export const BookingScreen = ({ route, navigation }: any) => {
+  const { salonId, serviceIds } = route.params;
+  const [selectedDate, setSelectedDate] = useState("2024-12-25");
+  const [selectedTime, setSelectedTime] = useState("14:00");
+
+  const handleConfirmBooking = () => {
+    Alert.alert(
+      "Booking Confirmed",
+      "Your appointment has been booked successfully!",
+      [{ text: "OK", onPress: () => navigation.navigate("CustomerTabs") }]
+    );
+  };
+
+  return (
+    <ScrollView style={styles.container}>
+      <Text style={styles.title}>Select Date & Time</Text>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Date</Text>
+        <Text style={styles.value}>{selectedDate}</Text>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Time</Text>
+        <Text style={styles.value}>{selectedTime}</Text>
+      </View>
+
+      <TouchableOpacity style={styles.button} onPress={handleConfirmBooking}>
+        <Text style={styles.buttonText}>Confirm Booking</Text>
+      </TouchableOpacity>
+    </ScrollView>
+  );
+};
 
 export function MyBookingsScreen() {
   return (
@@ -21,14 +63,41 @@ export function MyBookingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
-    paddingTop: 60,
+    backgroundColor: theme.colors.white,
+    padding: theme.spacing.lg,
   },
   title: {
-    fontSize: 28,
-    fontWeight: "bold",
-    paddingHorizontal: 20,
-    marginBottom: 20,
+    ...theme.typography.h2,
+    color: theme.colors.text,
+    marginBottom: theme.spacing.xl,
+  },
+  section: {
+    marginBottom: theme.spacing.xl,
+  },
+  sectionTitle: {
+    ...theme.typography.h4,
+    color: theme.colors.text,
+    marginBottom: theme.spacing.md,
+  },
+  value: {
+    ...theme.typography.body,
+    color: theme.colors.textSecondary,
+    padding: theme.spacing.md,
+    backgroundColor: theme.colors.backgroundDark,
+    borderRadius: theme.borderRadius.md,
+  },
+  button: {
+    backgroundColor: theme.colors.primary,
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.lg,
+    borderRadius: theme.borderRadius.lg,
+    alignItems: "center",
+    marginTop: theme.spacing.lg,
+  },
+  buttonText: {
+    color: theme.colors.white,
+    fontSize: theme.fontSize.md,
+    fontWeight: "600",
   },
   content: {
     flex: 1,
