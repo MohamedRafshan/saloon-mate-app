@@ -1,10 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import {
-  RouteProp,
-  useNavigation,
-  useNavigationState,
-  useRoute,
-} from "@react-navigation/native";
+import { useNavigation, useNavigationState } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import React, { useState } from "react";
 import {
@@ -24,12 +19,9 @@ type RegisterScreenNavigationProp = NativeStackNavigationProp<
   AuthStackParamList,
   "Register"
 >;
-type RegisterScreenRouteProp = RouteProp<AuthStackParamList, "Register">;
 
 export const RegisterScreen = () => {
   const navigation = useNavigation<RegisterScreenNavigationProp>();
-  const route = useRoute<RegisterScreenRouteProp>();
-  const accountType = route.params?.accountType || "customer";
 
   const canGoBack = useNavigationState((state) => state.index > 0);
 
@@ -75,18 +67,13 @@ export const RegisterScreen = () => {
           name: name,
           email: email,
           phone: phone,
-          role: accountType,
+          role: "customer",
         },
         password
       );
 
-      Alert.alert(
-        "Success",
-        `${
-          accountType === "business" ? "Business" : "Customer"
-        } account created successfully!`
-      );
-    } catch (error) {
+      Alert.alert("Success", "Customer account created successfully!");
+    } catch {
       Alert.alert("Error", "Registration failed. Please try again.");
     } finally {
       setLoading(false);
@@ -112,23 +99,13 @@ export const RegisterScreen = () => {
         <View style={styles.form}>
           <Text style={styles.title}>Create Account</Text>
           <Text style={styles.subtitle}>
-            {accountType === "business"
-              ? "Register your business to start accepting bookings"
-              : "Sign up to book appointments and manage your visits"}
+            Sign up to book appointments and manage your visits
           </Text>
-
-          {accountType === "business" && (
-            <View style={styles.accountTypeBadge}>
-              <Text style={styles.accountTypeText}>🏢 Business Account</Text>
-            </View>
-          )}
 
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.input}
-              placeholder={
-                accountType === "business" ? "Business Name" : "Full Name"
-              }
+              placeholder="Full Name"
               value={name}
               onChangeText={setName}
               autoCapitalize="words"
@@ -190,20 +167,16 @@ export const RegisterScreen = () => {
             </TouchableOpacity>
           </View>
 
-          {accountType === "customer" && (
-            <View style={styles.linkContainer}>
-              <Text style={styles.linkQuestion}>
-                Want to register a business?
-              </Text>
-              <TouchableOpacity
-                onPress={() =>
-                  navigation.navigate("Register", { accountType: "business" })
-                }
-              >
-                <Text style={styles.linkText}>Create business account</Text>
-              </TouchableOpacity>
-            </View>
-          )}
+          <View style={styles.linkContainer}>
+            <Text style={styles.linkQuestion}>
+              Want to register a business?
+            </Text>
+            <TouchableOpacity
+              onPress={() => navigation.navigate("BusinessRegister")}
+            >
+              <Text style={styles.linkText}>Create business account</Text>
+            </TouchableOpacity>
+          </View>
 
           <Text style={styles.termsText}>
             By creating an account, you agree to our Terms of Service and
@@ -248,19 +221,6 @@ const styles = StyleSheet.create({
     color: "#666666",
     lineHeight: 24,
     marginBottom: 20,
-  },
-  accountTypeBadge: {
-    backgroundColor: "#F0EDFF",
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-    alignSelf: "flex-start",
-    marginBottom: 20,
-  },
-  accountTypeText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#6C5CE7",
   },
   inputContainer: {
     marginBottom: 24,

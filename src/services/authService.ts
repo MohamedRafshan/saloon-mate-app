@@ -11,8 +11,13 @@ export interface AuthUser {
   role: "customer" | "business";
   businessId?: string;
   businessName?: string;
+  description?: string;
+  category?: string;
   address?: string;
   city?: string;
+  latitude?: number;
+  longitude?: number;
+  amenities?: string[];
 }
 
 export interface AuthToken {
@@ -120,12 +125,19 @@ export const authService = {
     const mockUser: AuthUser = {
       id: "user_" + Date.now(),
       name: userData.name || "New User",
-      businessName: (userData as any).businessName || "",
       email: userData.email || "",
       phone: userData.phone || "",
       role: userData.role || "customer",
       businessId:
         userData.role === "business" ? "business_" + Date.now() : undefined,
+      businessName: userData.businessName || "",
+      description: userData.description || "",
+      category: userData.category || "",
+      address: userData.address || "",
+      city: userData.city || "",
+      latitude: userData.latitude,
+      longitude: userData.longitude,
+      amenities: userData.amenities || [],
     };
 
     await this.saveAuth(mockToken, mockUser);

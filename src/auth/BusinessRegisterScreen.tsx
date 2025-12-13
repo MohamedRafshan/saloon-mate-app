@@ -36,19 +36,40 @@ export const BusinessRegisterScreen = () => {
     }
   };
 
+  // Business Information
   const [businessName, setBusinessName] = useState("");
-  const [ownerName, setOwnerName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
+  const [description, setDescription] = useState("");
+  const [category, setCategory] = useState("");
   const [address, setAddress] = useState("");
   const [city, setCity] = useState("");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+
+  // Location
+  const [latitude, setLatitude] = useState("");
+  const [longitude, setLongitude] = useState("");
+
+  // Owner Information
+  const [ownerName, setOwnerName] = useState("");
+
+  // Security
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+
+  // Amenities (checkboxes)
+  const [hasWiFi, setHasWiFi] = useState(false);
+  const [hasParking, setHasParking] = useState(false);
+  const [hasCoffeeBar, setHasCoffeeBar] = useState(false);
+  const [hasMusic, setHasMusic] = useState(false);
+
   const [loading, setLoading] = useState(false);
 
   const handleRegister = async () => {
+    // Validate required fields
     if (
       !businessName ||
+      !description ||
+      !category ||
       !ownerName ||
       !email ||
       !phone ||
@@ -57,7 +78,7 @@ export const BusinessRegisterScreen = () => {
       !password ||
       !confirmPassword
     ) {
-      Alert.alert("Error", "Please fill in all fields");
+      Alert.alert("Error", "Please fill in all required fields");
       return;
     }
 
@@ -71,9 +92,27 @@ export const BusinessRegisterScreen = () => {
       return;
     }
 
+    // Validate location if provided
+    if (latitude && isNaN(parseFloat(latitude))) {
+      Alert.alert("Error", "Please enter a valid latitude");
+      return;
+    }
+    if (longitude && isNaN(parseFloat(longitude))) {
+      Alert.alert("Error", "Please enter a valid longitude");
+      return;
+    }
+
     setLoading(true);
     try {
       const { authService } = await import("../services/authService");
+
+      // Prepare amenities array
+      const amenities = [];
+      if (hasWiFi) amenities.push("WiFi");
+      if (hasParking) amenities.push("Parking");
+      if (hasCoffeeBar) amenities.push("Coffee Bar");
+      if (hasMusic) amenities.push("Music");
+
       await authService.register(
         {
           name: ownerName,
@@ -81,8 +120,13 @@ export const BusinessRegisterScreen = () => {
           phone: phone,
           role: "business",
           businessName: businessName,
+          description: description,
+          category: category,
           address: address,
           city: city,
+          latitude: latitude ? parseFloat(latitude) : undefined,
+          longitude: longitude ? parseFloat(longitude) : undefined,
+          amenities: amenities,
         },
         password
       );
@@ -91,7 +135,7 @@ export const BusinessRegisterScreen = () => {
         "Success",
         "Business account created successfully! You can now access your dashboard."
       );
-    } catch (error) {
+    } catch {
       Alert.alert("Error", "Registration failed. Please try again.");
     } finally {
       setLoading(false);
@@ -129,7 +173,7 @@ export const BusinessRegisterScreen = () => {
 
             <TextInput
               style={styles.input}
-              placeholder="Business Name"
+              placeholder="Business Name *"
               value={businessName}
               onChangeText={setBusinessName}
               autoCapitalize="words"
@@ -137,8 +181,27 @@ export const BusinessRegisterScreen = () => {
             />
 
             <TextInput
+              style={[styles.input, styles.textArea]}
+              placeholder="Business Description *"
+              value={description}
+              onChangeText={setDescription}
+              multiline
+              numberOfLines={3}
+              placeholderTextColor="#999"
+            />
+
+            <TextInput
               style={styles.input}
-              placeholder="Business Address"
+              placeholder="Category (e.g., Hair Salon, Barber, Beauty Salon) *"
+              value={category}
+              onChangeText={setCategory}
+              autoCapitalize="words"
+              placeholderTextColor="#999"
+            />
+
+            <TextInput
+              style={styles.input}
+              placeholder="Business Address *"
               value={address}
               onChangeText={setAddress}
               autoCapitalize="words"
@@ -147,27 +210,25 @@ export const BusinessRegisterScreen = () => {
 
             <TextInput
               style={styles.input}
-              placeholder="City"
+              placeholder="City *"
               value={city}
               onChangeText={setCity}
               autoCapitalize="words"
               placeholderTextColor="#999"
             />
 
-            <Text style={styles.sectionTitle}>Owner Information</Text>
-
             <TextInput
               style={styles.input}
-              placeholder="Owner Name"
-              value={ownerName}
-              onChangeText={setOwnerName}
-              autoCapitalize="words"
+              placeholder="Business Phone *"
+              value={phone}
+              onChangeText={setPhone}
+              keyboardType="phone-pad"
               placeholderTextColor="#999"
             />
 
             <TextInput
               style={styles.input}
-              placeholder="Email address"
+              placeholder="Business Email *"
               value={email}
               onChangeText={setEmail}
               keyboardType="email-address"
@@ -175,12 +236,89 @@ export const BusinessRegisterScreen = () => {
               placeholderTextColor="#999"
             />
 
+            <Text style={styles.sectionTitle}>Location (Optional)</Text>
+            <Text style={styles.helperText}>
+              Provide coordinates to help customers find your business
+            </Text>
+
             <TextInput
               style={styles.input}
-              placeholder="Phone number"
-              value={phone}
-              onChangeText={setPhone}
-              keyboardType="phone-pad"
+              placeholder="Latitude (e.g., 6.9271)"
+              value={latitude}
+              onChangeText={setLatitude}
+              keyboardType="decimal-pad"
+              placeholderTextColor="#999"
+            />
+
+            <TextInput
+              style={styles.input}
+              placeholder="Longitude (e.g., 79.8612)"
+              value={longitude}
+              onChangeText={setLongitude}
+              keyboardType="decimal-pad"
+              placeholderTextColor="#999"
+            />
+
+            <Text style={styles.sectionTitle}>Amenities</Text>
+
+            <View style={styles.checkboxContainer}>
+              <TouchableOpacity
+                style={styles.checkbox}
+                onPress={() => setHasWiFi(!hasWiFi)}
+              >
+                <Ionicons
+                  name={hasWiFi ? "checkbox" : "square-outline"}
+                  size={24}
+                  color={hasWiFi ? "#6C5CE7" : "#999"}
+                />
+                <Text style={styles.checkboxLabel}>WiFi</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.checkbox}
+                onPress={() => setHasParking(!hasParking)}
+              >
+                <Ionicons
+                  name={hasParking ? "checkbox" : "square-outline"}
+                  size={24}
+                  color={hasParking ? "#6C5CE7" : "#999"}
+                />
+                <Text style={styles.checkboxLabel}>Parking</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.checkbox}
+                onPress={() => setHasCoffeeBar(!hasCoffeeBar)}
+              >
+                <Ionicons
+                  name={hasCoffeeBar ? "checkbox" : "square-outline"}
+                  size={24}
+                  color={hasCoffeeBar ? "#6C5CE7" : "#999"}
+                />
+                <Text style={styles.checkboxLabel}>Coffee Bar</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.checkbox}
+                onPress={() => setHasMusic(!hasMusic)}
+              >
+                <Ionicons
+                  name={hasMusic ? "checkbox" : "square-outline"}
+                  size={24}
+                  color={hasMusic ? "#6C5CE7" : "#999"}
+                />
+                <Text style={styles.checkboxLabel}>Music</Text>
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.sectionTitle}>Owner Information</Text>
+
+            <TextInput
+              style={styles.input}
+              placeholder="Owner Name *"
+              value={ownerName}
+              onChangeText={setOwnerName}
+              autoCapitalize="words"
               placeholderTextColor="#999"
             />
 
@@ -188,7 +326,7 @@ export const BusinessRegisterScreen = () => {
 
             <TextInput
               style={styles.input}
-              placeholder="Password"
+              placeholder="Password *"
               value={password}
               onChangeText={setPassword}
               secureTextEntry={true}
@@ -197,7 +335,7 @@ export const BusinessRegisterScreen = () => {
 
             <TextInput
               style={styles.input}
-              placeholder="Confirm Password"
+              placeholder="Confirm Password *"
               value={confirmPassword}
               onChangeText={setConfirmPassword}
               secureTextEntry={true}
@@ -295,6 +433,30 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     borderWidth: 1,
     borderColor: "#E0E0E0",
+  },
+  textArea: {
+    minHeight: 80,
+    textAlignVertical: "top",
+    paddingTop: 12,
+  },
+  helperText: {
+    fontSize: 13,
+    color: "#999",
+    marginBottom: 12,
+    marginTop: -8,
+  },
+  checkboxContainer: {
+    marginBottom: 8,
+  },
+  checkbox: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  checkboxLabel: {
+    fontSize: 16,
+    color: "#000",
+    marginLeft: 8,
   },
   registerButton: {
     backgroundColor: "#6C5CE7",

@@ -40,7 +40,7 @@ export const LoginScreen = () => {
       const { authService } = await import("../services/authService");
       await authService.login(email, password);
       Alert.alert("Success", "Login successful!");
-    } catch (error) {
+    } catch {
       Alert.alert("Error", "Invalid email or password");
     } finally {
       setLoading(false);
@@ -145,23 +145,16 @@ export const LoginScreen = () => {
             <Text style={styles.linkQuestion}>Dont have an account?</Text>
             <TouchableOpacity
               onPress={() =>
-                navigation.navigate("Register", { accountType: "customer" })
+                accountType === "customer"
+                  ? navigation.navigate("Register", { accountType: "customer" })
+                  : navigation.navigate("BusinessRegister")
               }
             >
-              <Text style={styles.linkText}>Register</Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.linkContainer}>
-            <Text style={styles.linkQuestion}>
-              {accountType === "customer"
-                ? "Have a business?"
-                : "Want to create a business account?"}
-            </Text>
-            <TouchableOpacity
-              onPress={() => navigation.navigate("BusinessRegister")}
-            >
-              <Text style={styles.linkText}>Create business account</Text>
+              <Text style={styles.linkText}>
+                {accountType === "customer"
+                  ? "Create customer account"
+                  : "Create business account"}
+              </Text>
             </TouchableOpacity>
           </View>
 
