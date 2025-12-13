@@ -1,0 +1,39 @@
+[
+  {
+    "id": "booking1",
+    "customerId": "user1",
+    "salonId": "salon1",
+    "serviceIds": ["service1", "service7"],
+    "date": "2024-12-20",
+    "time": "14:00",
+    "status": "confirmed",
+    "totalPrice": 185,
+    "paymentStatus": "paid",
+    "notes": "Please use organic products",
+    "createdAt": "2024-12-15T10:30:00Z"
+  },
+  {
+    "id": "booking2",
+    "customerId": "user1",
+    "salonId": "salon3",
+    "serviceIds": ["service8"],
+    "date": "2024-12-18",
+    "time": "11:00",
+    "status": "completed",
+    "totalPrice": 55,
+    "paymentStatus": "paid",
+    "createdAt": "2024-12-10T14:20:00Z"
+  },
+  {
+    "id": "booking3",
+    "customerId": "user2",
+    "salonId": "salon2",
+    "serviceIds": ["service4", "service5"],
+    "date": "2024-12-22",
+    "time": "16:30",
+    "status": "pending",
+    "totalPrice": 60,
+    "paymentStatus": "pending",
+    "createdAt": "2024-12-16T09:15:00Z"
+  }
+]

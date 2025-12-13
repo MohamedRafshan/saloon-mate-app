@@ -1,0 +1,35 @@
+[
+  {
+    "id": "review1",
+    "salonId": "salon1",
+    "userId": "user1",
+    "userName": "Sangeetha D",
+    "userInitials": "SD",
+    "rating": 5,
+    "comment": "Always the best experience having my cuts with Yves. He knows exactly what's best and keeps me looking fresh all the time. Highly recommend!",
+    "date": "2025-11-23T16:30:00Z",
+    "staffName": "Yves"
+  },
+  {
+    "id": "review2",
+    "salonId": "salon1",
+    "userId": "user2",
+    "userName": "Sadhana V",
+    "userInitials": "SV",
+    "rating": 5,
+    "comment": "Amazing service and beautiful ambiance. The staff is very professional and friendly.",
+    "date": "2025-11-20T14:15:00Z",
+    "staffName": "Samantha"
+  },
+  {
+    "id": "review3",
+    "salonId": "salon1",
+    "userId": "user3",
+    "userName": "Priya K",
+    "userInitials": "PK",
+    "rating": 4,
+    "comment": "Great experience overall. The salon is clean and modern.",
+    "date": "2025-11-18T10:00:00Z",
+    "staffName": "Stephanie"
+  }
+]

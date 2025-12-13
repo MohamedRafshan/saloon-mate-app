@@ -1,0 +1,44 @@
+[
+  {
+    "id": "user1",
+    "email": "john@example.com",
+    "name": "John Doe",
+    "phone": "+1234567890",
+    "role": "customer",
+    "avatar": "https://i.pravatar.cc/150?img=1",
+    "favoritesSalonIds": ["salon1", "salon3"],
+    "createdAt": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "user2",
+    "email": "jane@example.com",
+    "name": "Jane Smith",
+    "phone": "+1234567891",
+    "role": "customer",
+    "avatar": "https://i.pravatar.cc/150?img=2",
+    "favoritesSalonIds": ["salon2"],
+    "createdAt": "2024-01-02T00:00:00Z"
+  },
+  {
+    "id": "owner1",
+    "email": "owner@luxesalon.com",
+    "name": "Sarah Johnson",
+    "phone": "+1234567892",
+    "role": "owner",
+    "avatar": "https://i.pravatar.cc/150?img=3",
+    "salonIds": ["salon1"],
+    "businessName": "Luxe Salon & Spa",
+    "createdAt": "2023-12-01T00:00:00Z"
+  },
+  {
+    "id": "owner2",
+    "email": "owner@urbancutz.com",
+    "name": "Michael Brown",
+    "phone": "+1234567893",
+    "role": "owner",
+    "avatar": "https://i.pravatar.cc/150?img=4",
+    "salonIds": ["salon2"],
+    "businessName": "Urban Cutz",
+    "createdAt": "2023-11-15T00:00:00Z"
+  }
+]

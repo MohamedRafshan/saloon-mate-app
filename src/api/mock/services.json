@@ -1,0 +1,112 @@
+[
+  {
+    "id": "service1",
+    "salonId": "salon1",
+    "name": "Classic Colour",
+    "description": "Full color treatment",
+    "duration": "30 mins - 1 hour",
+    "price": 158,
+    "currency": "MYR",
+    "category": "Featured",
+    "available": true,
+    "featured": true
+  },
+  {
+    "id": "service2",
+    "salonId": "salon1",
+    "name": "Haircut by Yves",
+    "description": "Professional haircut with styling",
+    "duration": "30 mins",
+    "price": 168,
+    "currency": "MYR",
+    "category": "Haircut",
+    "available": true,
+    "staffName": "Yves"
+  },
+  {
+    "id": "service3",
+    "salonId": "salon1",
+    "name": "Nano bubble wash powered by MARBB",
+    "description": "Deep cleansing hair wash",
+    "duration": "30 mins",
+    "price": 30,
+    "currency": "MYR",
+    "category": "Wash & Styling",
+    "available": true
+  },
+  {
+    "id": "service4",
+    "salonId": "salon1",
+    "name": "Hair Makeover PROMO 688",
+    "description": "Complete hair transformation package",
+    "duration": "1 hour 30 mins",
+    "price": 688,
+    "originalPrice": 1070,
+    "currency": "MYR",
+    "category": "Featured",
+    "available": true,
+    "featured": true,
+    "discount": "Save 38%",
+    "servicesIncluded": "3 services"
+  },
+  {
+    "id": "service4",
+    "salonId": "salon2",
+    "name": "Classic Men's Cut",
+    "description": "Traditional barbershop haircut",
+    "duration": 30,
+    "price": 35,
+    "category": "haircut",
+    "available": true
+  },
+  {
+    "id": "service5",
+    "salonId": "salon2",
+    "name": "Beard Trim & Shape",
+    "description": "Precision beard trimming and shaping",
+    "duration": 20,
+    "price": 25,
+    "category": "haircut",
+    "available": true
+  },
+  {
+    "id": "service6",
+    "salonId": "salon2",
+    "name": "Hot Towel Shave",
+    "description": "Traditional hot towel straight razor shave",
+    "duration": 45,
+    "price": 45,
+    "category": "haircut",
+    "available": true
+  },
+  {
+    "id": "service7",
+    "salonId": "salon1",
+    "name": "Luxury Facial",
+    "description": "Rejuvenating facial treatment",
+    "duration": 90,
+    "price": 110,
+    "category": "facial",
+    "available": true
+  },
+  {
+    "id": "service8",
+    "salonId": "salon3",
+    "name": "Gel Manicure",
+    "description": "Long-lasting gel manicure",
+    "duration": 45,
+    "price": 55,
+    "category": "nails",
+    "available": true
+  },
+  {
+    "id": "service9",
+    "salonId": "salon3",
+    "name": "Spa Pedicure",
+    "description": "Luxurious spa pedicure treatment",
+    "duration": 60,
+    "price": 65,
+    "category": "nails",
+    "available": true
+  }
+]

@@ -1,0 +1,399 @@
+[
+  {
+    "id": "salon1",
+    "name": "Maldon Salon",
+    "description": "Premium hair salon with elegant styling chairs and warm ambiance",
+    "ownerId": "owner1",
+    "address": "05-05, OOAK Suites @ Kiara 163",
+    "city": "Colombo",
+    "phone": "+94112345671",
+    "email": "contact@maldonsalon.com",
+    "rating": 4.9,
+    "reviewCount": 909,
+    "category": "Hair Salon",
+    "image": "https://images.unsplash.com/photo-1560066984-138dadb4c035?w=800",
+    "images": [
+      "https://images.unsplash.com/photo-1560066984-138dadb4c035?w=800",
+      "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?w=800"
+    ],
+    "openingHours": {
+      "monday": { "open": "09:00", "close": "20:00", "closed": false },
+      "tuesday": { "open": "09:00", "close": "20:00", "closed": false },
+      "wednesday": { "open": "09:00", "close": "20:00", "closed": false },
+      "thursday": { "open": "09:00", "close": "21:00", "closed": false },
+      "friday": { "open": "09:00", "close": "21:00", "closed": false },
+      "saturday": { "open": "10:00", "close": "18:00", "closed": false },
+      "sunday": { "open": "10:00", "close": "17:00", "closed": false }
+    },
+    "location": {
+      "latitude": 6.9271,
+      "longitude": 79.8612
+    },
+    "services": ["service1", "service2", "service3"],
+    "amenities": ["WiFi", "Coffee Bar", "Parking"],
+    "createdAt": "2023-12-01T00:00:00Z"
+  },
+  {
+    "id": "salon2",
+    "name": "Style H Gents Salon",
+    "description": "Modern and sleek barber shop for professional men's grooming",
+    "ownerId": "owner2",
+    "address": "Inside Marina view Hotel",
+    "city": "Colombo",
+    "phone": "+94112345672",
+    "email": "info@stylehgents.com",
+    "rating": 5.0,
+    "reviewCount": 369,
+    "category": "Barber",
+    "image": "https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=800",
+    "images": [
+      "https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=800"
+    ],
+    "openingHours": {
+      "monday": { "open": "10:00", "close": "19:00", "closed": false },
+      "tuesday": { "open": "10:00", "close": "19:00", "closed": false },
+      "wednesday": { "open": "10:00", "close": "19:00", "closed": false },
+      "thursday": { "open": "10:00", "close": "19:00", "closed": false },
+      "friday": { "open": "10:00", "close": "20:00", "closed": false },
+      "saturday": { "open": "09:00", "close": "18:00", "closed": false },
+      "sunday": { "open": "", "close": "", "closed": true }
+    },
+    "location": {
+      "latitude": 6.9352,
+      "longitude": 79.8509
+    },
+    "services": ["service4", "service5", "service6"],
+    "amenities": ["WiFi", "Music", "Magazines"],
+    "createdAt": "2023-11-15T00:00:00Z"
+  },
+  {
+    "id": "salon3",
+    "name": "Leena Hari",
+    "description": "Boutique hair salon with cozy pink velvet chairs",
+    "ownerId": "owner3",
+    "address": "180 Park Road, Colombo 05",
+    "city": "Colombo",
+    "phone": "+94112345673",
+    "email": "hello@leenahari.com",
+    "rating": 5.0,
+    "reviewCount": 4,
+    "category": "Hair Salon",
+    "image": "https://images.unsplash.com/photo-1562322140-8baeececf3df?w=800",
+    "images": [
+      "https://images.unsplash.com/photo-1562322140-8baeececf3df?w=800"
+    ],
+    "openingHours": {
+      "monday": { "open": "09:00", "close": "19:00", "closed": false },
+      "tuesday": { "open": "09:00", "close": "19:00", "closed": false },
+      "wednesday": { "open": "09:00", "close": "19:00", "closed": false },
+      "thursday": { "open": "09:00", "close": "20:00", "closed": false },
+      "friday": { "open": "09:00", "close": "20:00", "closed": false },
+      "saturday": { "open": "10:00", "close": "18:00", "closed": false },
+      "sunday": { "open": "", "close": "", "closed": true }
+    },
+    "location": {
+      "latitude": 6.9147,
+      "longitude": 79.8560
+    },
+    "services": ["service1", "service2", "service7"],
+    "amenities": ["WiFi", "Refreshments", "Product Shop"],
+    "createdAt": "2024-01-10T00:00:00Z"
+  },
+  {
+    "id": "salon4",
+    "name": "Jaal Salon",
+    "description": "Elegant salon with arched mirrors and warm lighting",
+    "ownerId": "owner4",
+    "address": "Jaal Salon, No.15A Main Street",
+    "city": "Colombo",
+    "phone": "+94112345674",
+    "email": "contact@jaalsalon.com",
+    "rating": 5.0,
+    "reviewCount": 26,
+    "category": "Hair Salon",
+    "image": "https://images.unsplash.com/photo-1633681926022-84c23e8cb2d6?w=800",
+    "images": [
+      "https://images.unsplash.com/photo-1633681926022-84c23e8cb2d6?w=800"
+    ],
+    "openingHours": {
+      "monday": { "open": "09:00", "close": "20:00", "closed": false },
+      "tuesday": { "open": "09:00", "close": "20:00", "closed": false },
+      "wednesday": { "open": "09:00", "close": "20:00", "closed": false },
+      "thursday": { "open": "09:00", "close": "20:00", "closed": false },
+      "friday": { "open": "09:00", "close": "21:00", "closed": false },
+      "saturday": { "open": "10:00", "close": "19:00", "closed": false },
+      "sunday": { "open": "10:00", "close": "17:00", "closed": false }
+    },
+    "location": {
+      "latitude": 6.9235,
+      "longitude": 79.8456
+    },
+    "services": ["service1", "service3", "service8"],
+    "amenities": ["WiFi", "Parking", "Coffee"],
+    "createdAt": "2024-02-15T00:00:00Z"
+  },
+  {
+    "id": "salon5",
+    "name": "Studio Zee | Colombo 07",
+    "description": "Bright and spacious beauty salon with modern equipment",
+    "ownerId": "owner5",
+    "address": "20A Guildford Crescent, Colombo 07",
+    "city": "Colombo",
+    "phone": "+94112345675",
+    "email": "info@studiozee.com",
+    "rating": 4.8,
+    "reviewCount": 547,
+    "category": "Beauty Salon",
+    "image": "https://images.unsplash.com/photo-1522337660859-02fbefca4702?w=800",
+    "images": [
+      "https://images.unsplash.com/photo-1522337660859-02fbefca4702?w=800"
+    ],
+    "openingHours": {
+      "monday": { "open": "09:00", "close": "19:00", "closed": false },
+      "tuesday": { "open": "09:00", "close": "19:00", "closed": false },
+      "wednesday": { "open": "09:00", "close": "19:00", "closed": false },
+      "thursday": { "open": "09:00", "close": "20:00", "closed": false },
+      "friday": { "open": "09:00", "close": "20:00", "closed": false },
+      "saturday": { "open": "09:00", "close": "18:00", "closed": false },
+      "sunday": { "open": "", "close": "", "closed": true }
+    },
+    "location": {
+      "latitude": 6.9098,
+      "longitude": 79.8607
+    },
+    "services": ["service2", "service8", "service9"],
+    "amenities": ["WiFi", "Air Conditioning", "Parking"],
+    "createdAt": "2024-03-01T00:00:00Z"
+  },
+  {
+    "id": "salon6",
+    "name": "Raula Barbershop",
+    "description": "Classic barbershop with vintage charm and wooden interiors",
+    "ownerId": "owner6",
+    "address": "129 Kirulapone Avenue",
+    "city": "Colombo",
+    "phone": "+94112345676",
+    "email": "hello@raulabarber.com",
+    "rating": 4.9,
+    "reviewCount": 195,
+    "category": "Barber",
+    "image": "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=800",
+    "images": [
+      "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=800"
+    ],
+    "openingHours": {
+      "monday": { "open": "10:00", "close": "20:00", "closed": false },
+      "tuesday": { "open": "10:00", "close": "20:00", "closed": false },
+      "wednesday": { "open": "10:00", "close": "20:00", "closed": false },
+      "thursday": { "open": "10:00", "close": "20:00", "closed": false },
+      "friday": { "open": "10:00", "close": "21:00", "closed": false },
+      "saturday": { "open": "09:00", "close": "21:00", "closed": false },
+      "sunday": { "open": "10:00", "close": "18:00", "closed": false }
+    },
+    "location": {
+      "latitude": 6.8789,
+      "longitude": 79.8821
+    },
+    "services": ["service4", "service5"],
+    "amenities": ["WiFi", "Vintage Decor", "Refreshments"],
+    "createdAt": "2024-02-20T00:00:00Z"
+  },
+  {
+    "id": "salon7",
+    "name": "Cutting Avenue",
+    "description": "Premium modern salon with elegant interiors and professional staff",
+    "ownerId": "owner7",
+    "address": "20A Guildford Crescent, Colombo",
+    "city": "Colombo",
+    "phone": "+94112345677",
+    "email": "contact@cuttingavenue.com",
+    "rating": 5.0,
+    "reviewCount": 253,
+    "category": "Hair Salon",
+    "image": "https://images.unsplash.com/photo-1560066984-138dadb4c035?w=800",
+    "images": [
+      "https://images.unsplash.com/photo-1560066984-138dadb4c035?w=800"
+    ],
+    "openingHours": {
+      "monday": { "open": "09:00", "close": "20:00", "closed": false },
+      "tuesday": { "open": "09:00", "close": "20:00", "closed": false },
+      "wednesday": { "open": "09:00", "close": "20:00", "closed": false },
+      "thursday": { "open": "09:00", "close": "21:00", "closed": false },
+      "friday": { "open": "09:00", "close": "21:00", "closed": false },
+      "saturday": { "open": "10:00", "close": "18:00", "closed": false },
+      "sunday": { "open": "10:00", "close": "17:00", "closed": false }
+    },
+    "location": {
+      "latitude": 6.9098,
+      "longitude": 79.8607
+    },
+    "services": ["service1", "service2", "service7"],
+    "amenities": ["WiFi", "Parking", "Premium Products"],
+    "createdAt": "2024-01-05T00:00:00Z"
+  },
+  {
+    "id": "salon8",
+    "name": "Thaiya Wellness & Spa",
+    "description": "Authentic Thai spa experience with traditional massage therapies",
+    "ownerId": "owner8",
+    "address": "Colombo, Pitakotte",
+    "city": "Colombo",
+    "phone": "+94112345678",
+    "email": "info@thaiyaspa.com",
+    "rating": 4.5,
+    "reviewCount": 87,
+    "category": "Spa",
+    "image": "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=800",
+    "images": [
+      "https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=800"
+    ],
+    "openingHours": {
+      "monday": { "open": "10:00", "close": "21:00", "closed": false },
+      "tuesday": { "open": "10:00", "close": "21:00", "closed": false },
+      "wednesday": { "open": "10:00", "close": "21:00", "closed": false },
+      "thursday": { "open": "10:00", "close": "21:00", "closed": false },
+      "friday": { "open": "10:00", "close": "22:00", "closed": false },
+      "saturday": { "open": "10:00", "close": "22:00", "closed": false },
+      "sunday": { "open": "10:00", "close": "21:00", "closed": false }
+    },
+    "location": {
+      "latitude": 6.8820,
+      "longitude": 79.9017
+    },
+    "services": ["service7", "service8", "service9"],
+    "amenities": ["WiFi", "Tea Service", "Private Rooms"],
+    "createdAt": "2024-03-15T00:00:00Z"
+  },
+  {
+    "id": "salon9",
+    "name": "Shandhani Bandara Salons",
+    "description": "Professional bridal and beauty salon specializing in traditional styling",
+    "ownerId": "owner9",
+    "address": "45 Flower Road, Colombo 07",
+    "city": "Colombo",
+    "phone": "+94112345679",
+    "email": "contact@shandhani.com",
+    "rating": 4.9,
+    "reviewCount": 421,
+    "category": "Beauty Salon",
+    "image": "https://images.unsplash.com/photo-1522337660859-02fbefca4702?w=800",
+    "images": [
+      "https://images.unsplash.com/photo-1522337660859-02fbefca4702?w=800"
+    ],
+    "openingHours": {
+      "monday": { "open": "09:00", "close": "19:00", "closed": false },
+      "tuesday": { "open": "09:00", "close": "19:00", "closed": false },
+      "wednesday": { "open": "09:00", "close": "19:00", "closed": false },
+      "thursday": { "open": "09:00", "close": "20:00", "closed": false },
+      "friday": { "open": "09:00", "close": "20:00", "closed": false },
+      "saturday": { "open": "09:00", "close": "20:00", "closed": false },
+      "sunday": { "open": "10:00", "close": "18:00", "closed": false }
+    },
+    "location": {
+      "latitude": 6.9147,
+      "longitude": 79.8612
+    },
+    "services": ["service1", "service2", "service7", "service8"],
+    "amenities": ["WiFi", "Makeup Services", "Bridal Packages"],
+    "createdAt": "2023-10-20T00:00:00Z"
+  },
+  {
+    "id": "salon10",
+    "name": "The Grooming Lounge",
+    "description": "Modern men's grooming with premium service and products",
+    "ownerId": "owner10",
+    "address": "100 Union Place, Colombo 02",
+    "city": "Colombo",
+    "phone": "+94112345680",
+    "email": "hello@groominglounge.com",
+    "rating": 4.8,
+    "reviewCount": 312,
+    "category": "Barber",
+    "image": "https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=800",
+    "images": [
+      "https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=800"
+    ],
+    "openingHours": {
+      "monday": { "open": "10:00", "close": "20:00", "closed": false },
+      "tuesday": { "open": "10:00", "close": "20:00", "closed": false },
+      "wednesday": { "open": "10:00", "close": "20:00", "closed": false },
+      "thursday": { "open": "10:00", "close": "21:00", "closed": false },
+      "friday": { "open": "10:00", "close": "21:00", "closed": false },
+      "saturday": { "open": "09:00", "close": "21:00", "closed": false },
+      "sunday": { "open": "10:00", "close": "19:00", "closed": false }
+    },
+    "location": {
+      "latitude": 6.9271,
+      "longitude": 79.8501
+    },
+    "services": ["service4", "service5", "service6"],
+    "amenities": ["WiFi", "Premium Products", "Complimentary Drinks"],
+    "createdAt": "2024-01-25T00:00:00Z"
+  },
+  {
+    "id": "salon11",
+    "name": "Bella Beauty Studio",
+    "description": "Full-service beauty salon with nail, hair, and makeup services",
+    "ownerId": "owner11",
+    "address": "67 Duplication Road, Colombo 04",
+    "city": "Colombo",
+    "phone": "+94112345681",
+    "email": "info@bellastudio.com",
+    "rating": 4.7,
+    "reviewCount": 189,
+    "category": "Beauty Salon",
+    "image": "https://images.unsplash.com/photo-1633681926022-84c23e8cb2d6?w=800",
+    "images": [
+      "https://images.unsplash.com/photo-1633681926022-84c23e8cb2d6?w=800"
+    ],
+    "openingHours": {
+      "monday": { "open": "09:00", "close": "19:00", "closed": false },
+      "tuesday": { "open": "09:00", "close": "19:00", "closed": false },
+      "wednesday": { "open": "09:00", "close": "19:00", "closed": false },
+      "thursday": { "open": "09:00", "close": "19:00", "closed": false },
+      "friday": { "open": "09:00", "close": "20:00", "closed": false },
+      "saturday": { "open": "09:00", "close": "20:00", "closed": false },
+      "sunday": { "open": "", "close": "", "closed": true }
+    },
+    "location": {
+      "latitude": 6.8965,
+      "longitude": 79.8567
+    },
+    "services": ["service1", "service2", "service7", "service8", "service9"],
+    "amenities": ["WiFi", "Nail Services", "Refreshments"],
+    "createdAt": "2024-02-10T00:00:00Z"
+  },
+  {
+    "id": "salon12",
+    "name": "Kings Barber Lounge",
+    "description": "Traditional barbering with a modern twist for discerning gentlemen",
+    "ownerId": "owner12",
+    "address": "88 Galle Road, Colombo 03",
+    "city": "Colombo",
+    "phone": "+94112345682",
+    "email": "contact@kingsbarber.com",
+    "rating": 5.0,
+    "reviewCount": 156,
+    "category": "Barber",
+    "image": "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=800",
+    "images": [
+      "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=800"
+    ],
+    "openingHours": {
+      "monday": { "open": "10:00", "close": "20:00", "closed": false },
+      "tuesday": { "open": "10:00", "close": "20:00", "closed": false },
+      "wednesday": { "open": "10:00", "close": "20:00", "closed": false },
+      "thursday": { "open": "10:00", "close": "20:00", "closed": false },
+      "friday": { "open": "10:00", "close": "21:00", "closed": false },
+      "saturday": { "open": "09:00", "close": "21:00", "closed": false },
+      "sunday": { "open": "10:00", "close": "19:00", "closed": false }
+    },
+    "location": {
+      "latitude": 6.9271,
+      "longitude": 79.8454
+    },
+    "services": ["service4", "service5", "service6"],
+    "amenities": ["WiFi", "Hot Towel Service", "Complimentary Drinks"],
+    "createdAt": "2023-12-15T00:00:00Z"
+  }
+]
