@@ -12,7 +12,7 @@ import {
   View,
 } from "react-native";
 import { bookingService } from "../../api/bookingService";
-import { mockAPI } from "../../api/mock";
+import { salonService } from "../../api/salonService";
 import { authService, AuthUser } from "../../services/authService";
 import { theme } from "../../theme";
 import { Booking } from "../../types/Booking";
@@ -53,10 +53,10 @@ export const BookingFormScreen = ({ route, navigation }: any) => {
 
   const checkAuthAndLoadData = async () => {
     try {
-      const authenticated = await authService.isAuthenticated();
-      const user = await authService.getUser();
+      const authenticated = authService.isAuthenticated();
+      const firebaseUser = authService.getCurrentFirebaseUser();
 
-      if (!authenticated || !user) {
+      if (!authenticated || !firebaseUser) {
         setIsAuthenticated(false);
         Alert.alert(
           "Authentication Required",
@@ -71,17 +71,19 @@ export const BookingFormScreen = ({ route, navigation }: any) => {
         return;
       }
 
+      const user = await authService.getUser(firebaseUser.uid);
+      if (!user) {
+        throw new Error("User not found in database");
+      }
+
       setIsAuthenticated(true);
       setCurrentUser(user);
 
-      const [salonData, servicesData, bookingsData] = await Promise.all([
-        mockAPI.getSalonById(salonId),
-        mockAPI.getServicesBySalonId(salonId),
-        mockAPI.getBookingsBySalonId(salonId),
-      ]);
+      const salonData = await salonService.getSalonById(salonId);
+      // TODO: Replace getServicesBySalonId and getBookingsBySalonId with Firestore versions if available
+      setServices([]); // Placeholder, implement Firestore fetch for services
+      setExistingBookings([]); // Placeholder, implement Firestore fetch for bookings
       setSalon(salonData);
-      setServices(servicesData);
-      setExistingBookings(bookingsData);
     } catch (error) {
       Alert.alert("Error", "Failed to load salon data");
     } finally {

@@ -1,7 +1,7 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-
-const TOKEN_KEY = "@auth_token";
-const USER_KEY = "@user_data";
+import { doc, setDoc } from "firebase/firestore";
+import { salonService } from "../api/salonService";
+import { auth, db, firebase } from "../firebaseConfig";
+import { Salon } from "../types/Salon";
 
 export interface AuthUser {
   id: string;
@@ -23,136 +23,158 @@ export interface AuthUser {
   amenities?: string[];
 }
 
-export interface AuthToken {
-  token: string;
-  user: AuthUser;
-}
-
 // Auth state listeners
-type AuthListener = () => void;
+type AuthListener = (user: AuthUser | null) => void;
 const authListeners: AuthListener[] = [];
 
 export const authService = {
-  // Save authentication data
-  async saveAuth(token: string, user: AuthUser): Promise<void> {
-    try {
-      await AsyncStorage.setItem(TOKEN_KEY, token);
-      await AsyncStorage.setItem(USER_KEY, JSON.stringify(user));
-      this.notifyListeners();
-    } catch (error) {
-      console.error("Error saving auth:", error);
-    }
-  },
-
-  // Get authentication token
-  async getToken(): Promise<string | null> {
-    try {
-      return await AsyncStorage.getItem(TOKEN_KEY);
-    } catch (error) {
-      console.error("Error getting token:", error);
-      return null;
-    }
-  },
-
-  // Get user data
-  async getUser(): Promise<AuthUser | null> {
-    try {
-      const userData = await AsyncStorage.getItem(USER_KEY);
-      return userData ? JSON.parse(userData) : null;
-    } catch (error) {
-      console.error("Error getting user:", error);
-      return null;
-    }
-  },
-
-  // Check if user is authenticated
-  async isAuthenticated(): Promise<boolean> {
-    const token = await this.getToken();
-    return !!token;
-  },
-
-  // Clear authentication data
-  async clearAuth(): Promise<void> {
-    try {
-      await AsyncStorage.removeItem(TOKEN_KEY);
-      await AsyncStorage.removeItem(USER_KEY);
-      this.notifyListeners();
-    } catch (error) {
-      console.error("Error clearing auth:", error);
-    }
-  },
-
   // Subscribe to auth changes
   subscribe(listener: AuthListener): () => void {
-    authListeners.push(listener);
+    const firebaseUnsubscribe = auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        const authUser = await this.getUser(user.uid);
+        listener(authUser);
+      } else {
+        listener(null);
+      }
+    });
+
+    // Add a wrapper to our internal listeners array if needed, though onAuthStateChanged is often sufficient
+    const customListener = (user: AuthUser | null) => listener(user);
+    authListeners.push(customListener);
+
     return () => {
-      const index = authListeners.indexOf(listener);
+      firebaseUnsubscribe();
+      const index = authListeners.indexOf(customListener);
       if (index > -1) {
         authListeners.splice(index, 1);
       }
     };
   },
 
-  // Notify all listeners of auth state change
-  notifyListeners() {
-    authListeners.forEach((listener) => listener());
+  async getUser(uid: string): Promise<AuthUser | null> {
+    if (!uid || typeof uid !== "string") {
+      return null;
+    }
+    try {
+      const userDoc = await db.collection("users").doc(uid).get();
+      if (userDoc.exists) {
+        return userDoc.data() as AuthUser;
+      }
+      return null;
+    } catch (error) {
+      console.error("Error getting user from Firestore:", error);
+      return null;
+    }
   },
 
-  // Mock login
-  async login(
-    email: string,
-    password: string,
-    role: "customer" | "business" = "customer"
-  ): Promise<AuthToken> {
-    // Mock API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+  // Login
+  async login(email: string, password: string): Promise<any> {
+    if (!email || !password) {
+      throw new Error("Email and password are required for login.");
+    }
+    console.log(email);
 
-    const mockToken = `mock_token_${Date.now()}`;
-    const mockUser: AuthUser = {
-      id: "user_" + Date.now(),
-      name: role === "business" ? "Business Owner" : "Test User",
-      email: email,
-      phone: "+1 234 567 8900",
-      role: role,
-      businessId: role === "business" ? "business_" + Date.now() : undefined,
-      businessName: role === "business" ? "Test Business" : undefined,
-    };
+    try {
+      const userCredential = await auth.signInWithEmailAndPassword(
+        email,
+        password
+      );
+      console.log(email, password);
 
-    await this.saveAuth(mockToken, mockUser);
-    return { token: mockToken, user: mockUser };
+      const user = userCredential.user;
+      if (!user) {
+        throw new Error("User not found after login.");
+      }
+      const authUser = await this.getUser(user.uid);
+      if (!authUser) {
+        throw new Error("User data not found in Firestore.");
+      }
+      console.log("created", authUser);
+
+      return authUser;
+    } catch (error) {
+      console.log("Error login", error);
+    }
   },
 
-  // Mock register
-  async register(
-    userData: Partial<AuthUser>,
-    password: string
-  ): Promise<AuthToken> {
-    // Mock API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+  // Register
+  async register(userData: Partial<AuthUser>, password: string): Promise<any> {
+    if (!userData.email) {
+      throw new Error("Email is required for registration.");
+    }
 
-    const mockToken = `mock_token_${Date.now()}`;
-    const mockUser: AuthUser = {
-      id: "user_" + Date.now(),
-      name: userData.name || "New User",
-      email: userData.email || "",
-      phone: userData.phone || "",
-      role: userData.role || "customer",
-      businessId:
-        userData.role === "business" ? "business_" + Date.now() : undefined,
-      businessName: userData.businessName || "",
-      description: userData.description || "",
-      category: userData.category || "",
-      categories: userData.categories || [],
-      district: userData.district || "",
-      city: userData.city || "",
-      address: userData.address || "",
-      fullAddress: userData.fullAddress || "",
-      latitude: userData.latitude,
-      longitude: userData.longitude,
-      amenities: userData.amenities || [],
-    };
+    console.log(userData);
 
-    await this.saveAuth(mockToken, mockUser);
-    return { token: mockToken, user: mockUser };
+    try {
+      const userCredential = await auth.createUserWithEmailAndPassword(
+        userData.email,
+        password
+      );
+      const user = userCredential.user;
+      if (!user) {
+        throw new Error("User not found after registration.");
+      }
+      console.log("check1");
+
+      const newUser: AuthUser = {
+        id: user.uid,
+        name: userData.name || "New User",
+        email: user.email || "",
+        phone: userData.phone || "",
+        role: userData.role || "customer",
+      };
+
+      console.log("check2");
+
+      if (newUser.role === "business") {
+        const salonData: Partial<Salon> = {
+          name: userData.businessName,
+          description: userData.description,
+          categories: userData.categories,
+          district: userData.district,
+          city: userData.city,
+          address: userData.address,
+          phone: userData.phone,
+          email: userData.email,
+          location: {
+            latitude: userData.latitude || 0,
+            longitude: userData.longitude || 0,
+          },
+          amenities: userData.amenities,
+        };
+        const salonId = await salonService.createSalon(user.uid, salonData);
+        newUser.businessId = salonId;
+      }
+      console.log("check3");
+      // Save the user profile to Firestore
+      try {
+        await setDoc(doc(db, "users", user.uid), newUser);
+      } catch (error) {
+        console.log("Error saving user to Firestore:", error);
+      }
+      // await db.collection("users").doc(user.uid).set(newUser);
+      console.log("check4");
+
+      return newUser;
+    } catch (error) {
+      console.log("Error register", error);
+    }
+  },
+  // Clear authentication data (sign out)
+  async clearAuth(): Promise<void> {
+    try {
+      await auth.signOut();
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
+  },
+  // Get current Firebase user
+  getCurrentFirebaseUser(): firebase.User | null {
+    return auth.currentUser;
+  },
+  // Check if the user is authenticated
+  isAuthenticated: () => {
+    return !!auth.currentUser;
   },
 };

@@ -328,13 +328,18 @@ export const BusinessRegisterScreen = () => {
         },
         password
       );
-
       Alert.alert(
-        "Success",
-        "Business account created successfully! You can now access your dashboard."
+        "Registration Successful",
+        "Your business account has been created. Please log in.",
+        [{ text: "OK", onPress: () => navigation.navigate("Login") }]
       );
-    } catch {
-      Alert.alert("Error", "Registration failed. Please try again.");
+      navigation.navigate({ name: "SalonProfile" } as never);
+      // The navigation will be handled by the auth state listener
+    } catch (error: any) {
+      Alert.alert(
+        "Error",
+        error.message || "Registration failed. Please try again."
+      );
     } finally {
       setLoading(false);
     }

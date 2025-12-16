@@ -14,29 +14,15 @@ export const UserProfileScreen = ({ navigation }: any) => {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  const checkAuth = useCallback(async () => {
-    try {
-      const userData = await authService.getUser();
-      setUser(userData);
-    } catch (error) {
-      console.error("Error checking auth:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
   useEffect(() => {
-    checkAuth();
-
-    // Subscribe to auth state changes
-    const unsubscribe = authService.subscribe(() => {
-      checkAuth();
+    setLoading(true);
+    const unsubscribe = authService.subscribe((user) => {
+      setUser(user);
+      setLoading(false);
     });
 
-    return () => {
-      unsubscribe();
-    };
-  }, [checkAuth]);
+    return unsubscribe;
+  }, []);
 
   const logout = () => {
     Alert.alert("Logout", "Are you sure you want to logout?", [

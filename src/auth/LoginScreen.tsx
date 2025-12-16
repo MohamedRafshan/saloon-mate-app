@@ -30,6 +30,8 @@ export const LoginScreen = () => {
   );
 
   const handleLogin = async () => {
+    console.log("emai", email, password);
+
     if (!email || !password) {
       Alert.alert("Error", "Please enter email and password");
       return;
@@ -38,10 +40,10 @@ export const LoginScreen = () => {
     setLoading(true);
     try {
       const { authService } = await import("../services/authService");
-      await authService.login(email, password, accountType);
-      Alert.alert("Success", "Login successful!");
-    } catch {
-      Alert.alert("Error", "Invalid email or password");
+      await authService.login(email, password);
+      // The navigation will be handled by the auth state listener
+    } catch (error: any) {
+      Alert.alert("Error", error.message || "Invalid email or password");
     } finally {
       setLoading(false);
     }

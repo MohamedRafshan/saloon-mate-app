@@ -71,10 +71,12 @@ export const RegisterScreen = () => {
         },
         password
       );
-
-      Alert.alert("Success", "Customer account created successfully!");
-    } catch {
-      Alert.alert("Error", "Registration failed. Please try again.");
+      // The navigation will be handled by the auth state listener
+    } catch (error: any) {
+      Alert.alert(
+        "Error",
+        error.message || "Registration failed. Please try again."
+      );
     } finally {
       setLoading(false);
     }

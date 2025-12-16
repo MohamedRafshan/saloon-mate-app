@@ -9,9 +9,9 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { mockAPI } from "../../api/mock";
 import reviewsData from "../../api/mock/reviews.json";
 import staffData from "../../api/mock/staff.json";
+import { salonService } from "../../api/salonService";
 import { Salon } from "../../types/Salon";
 import { Service } from "../../types/Service";
 
@@ -35,12 +35,13 @@ export const SalonProfileScreen = ({ route, navigation }: any) => {
 
   const loadSalonData = async () => {
     try {
-      const [salonData, servicesData] = await Promise.all([
-        mockAPI.getSalonById(salonId),
-        mockAPI.getServicesBySalonId(salonId),
+      const [salonData] = await Promise.all([
+        salonService.getSalonById(salonId),
       ]);
+      // TODO: Replace getServicesBySalonId with Firestore version if available
+      setServices([]); // Placeholder, implement Firestore fetch for services
       setSalon(salonData);
-      setServices(servicesData);
+      // setServices(servicesData); // Removed: servicesData is undefined
     } catch (error) {
       console.error("Failed to load salon:", error);
     } finally {

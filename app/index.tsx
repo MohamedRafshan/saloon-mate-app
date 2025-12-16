@@ -12,38 +12,15 @@ export default function Page() {
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
 
-  const checkAuth = useCallback(async () => {
-    try {
-      const userData = await authService.getUser();
-      setUser(userData);
-    } catch (error) {
-      console.error("Error checking auth:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
   useEffect(() => {
-    checkAuth();
-
-    // Subscribe to auth state changes
-    const unsubscribe = authService.subscribe(() => {
-      setIsLoading(true);
-      checkAuth();
+    setIsLoading(true);
+    const unsubscribe = authService.subscribe((user) => {
+      setUser(user);
+      setIsLoading(false);
     });
 
-    // Listen for app state changes to refresh auth
-    const subscription = AppState.addEventListener("change", (nextAppState) => {
-      if (nextAppState === "active") {
-        checkAuth();
-      }
-    });
-
-    return () => {
-      unsubscribe();
-      subscription.remove();
-    };
-  }, [checkAuth]);
+    return unsubscribe;
+  }, []);
 
   if (isLoading) {
     return (

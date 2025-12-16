@@ -12,7 +12,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { mockAPI } from "../../api/mock";
+import { salonService } from "../../api/salonService";
 import { HomeStackParamList } from "../../navigation/HomeStack";
 import { Salon } from "../../types/Salon";
 
@@ -78,7 +78,7 @@ export const SearchScreen = () => {
 
   const loadSalons = async () => {
     try {
-      const data = await mockAPI.getSalons();
+      const data = await salonService.getAllSalons();
       setSalons(data);
     } catch (error) {
       console.error("Failed to load salons:", error);
