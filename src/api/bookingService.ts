@@ -186,7 +186,7 @@ async function scheduleAppointmentReminders(booking: Booking) {
       `It's time for your appointment at ${booking.salonId}.`,
       seconds
     );
-    if (id) notificationIds.push(id);
+    notificationIds.push(id);
   }
 
   if (notificationIds.length > 0) {
@@ -253,7 +253,7 @@ function mapBooking(id: string, data: any): Booking {
     totalPrice:
       typeof data.totalPrice === "string"
         ? Number(data.totalPrice)
-        e,
+        : data.totalPrice,
     paymentStatus: data.paymentStatus,
     notes: data.notes,
     createdAt:

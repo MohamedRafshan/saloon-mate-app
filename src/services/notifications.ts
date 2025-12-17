@@ -6,7 +6,8 @@ import { auth, db } from "../firebaseConfig";
 
 function isRemotePushSupported(): boolean {
   if (!Device.isDevice) return false;
-  if (Platform.OS === "android" && Constants.appOwnership === "expo") return false;
+  if (Platform.OS === "android" && Constants.appOwnership === "expo")
+    return false;
   return true;
 }
 
@@ -44,10 +45,17 @@ export async function registerPushToken(): Promise<string | null> {
     const token = await getExpoPushToken();
     const user = auth.currentUser;
     if (token && user) {
-      await db.collection("users").doc(user.uid).set(
-        { pushToken: token, pushPlatform: Platform.OS, pushUpdatedAt: Date.now() },
-        { merge: true }
-      );
+      await db
+        .collection("users")
+        .doc(user.uid)
+        .set(
+          {
+            pushToken: token,
+            pushPlatform: Platform.OS,
+            pushUpdatedAt: Date.now(),
+          },
+          { merge: true }
+        );
       if (__DEV__) {
         console.log("Saved pushToken to Firestore for", user.uid, token);
       }
@@ -83,9 +91,8 @@ export function configureNotificationHandlers() {
 
 export function addNotificationListeners() {
   const subReceived = Notifications.addNotificationReceivedListener(() => {});
-  const subResponse = Notifications.addNotificationResponseReceivedListener(
-    () => {}
-  );
+  const subResponse =
+    Notifications.addNotificationResponseReceivedListener(() => {});
   return () => {
     subReceived.remove();
     subResponse.remove();
@@ -100,8 +107,8 @@ export async function presentLocalNotification(
   title: string,
   body?: string,
   data?: Record<string, unknown>
-) {
-  await Notifications.scheduleNotificationAsync({
+): Promise<string> {
+  return await Notifications.scheduleNotificationAsync({
     content: {
       title,
       body,
@@ -116,10 +123,13 @@ export async function scheduleLocalNotification(
   body: string,
   secondsFromNow = 1,
   data?: Record<string, unknown>
-) {
-  await Notifications.scheduleNotificationAsync({
+): Promise<string> {
+  return await Notifications.scheduleNotificationAsync({
     content: { title, body, data },
-    trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: secondsFromNow },
+    trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+      seconds: secondsFromNow,
+    },
   });
 }
 
