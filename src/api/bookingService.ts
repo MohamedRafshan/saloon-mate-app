@@ -1,3 +1,4 @@
+import * as Notifications from "expo-notifications";
 import {
   addDoc,
   collection,
@@ -10,7 +11,6 @@ import {
   updateDoc,
   where,
 } from "firebase/firestore";
-import * as Notifications from "expo-notifications";
 import { db } from "../firebaseConfig";
 import {
   CACHE_EXPIRATION,
@@ -19,9 +19,20 @@ import {
 } from "../services/cacheService";
 import {
   sendPushNotification,
-  scheduleLocalNotification,
 } from "../services/notifications";
 import { Booking } from "../types/Booking";
+
+export async function scheduleLocalNotification(
+  title: string,
+  body: string,
+  secondsFromNow: number
+): Promise<string> {
+  const id = await Notifications.scheduleNotificationAsync({
+    content: { title, body },
+    trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: Math.max(1, Math.floor(secondsFromNow)) },
+  });
+  return id;
+}
 
 export const bookingService = {
   async getCustomerBookings(customerId: string): Promise<Booking[]> {
@@ -162,7 +173,7 @@ async function scheduleAppointmentReminders(booking: Booking) {
       `Your appointment at ${booking.salonId} is in 24 hours.`,
       seconds
     );
-    if (id) notificationIds.push(id);
+    notificationIds.push(id);
   }
 
   // 1-hour reminder
@@ -176,7 +187,7 @@ async function scheduleAppointmentReminders(booking: Booking) {
       `Your appointment at ${booking.salonId} is in 1 hour.`,
       seconds
     );
-    if (id) notificationIds.push(id);
+    notificationIds.push(id);
   }
   // At booking time
   if (appointmentDate > now) {
