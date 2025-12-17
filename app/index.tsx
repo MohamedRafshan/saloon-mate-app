@@ -63,8 +63,8 @@ export default function Page() {
     );
   }
 
-  // Business user - show shop dashboard
-  if (user.role === "business") {
+  // Business user (or legacy user with businessId) - show shop dashboard
+  if (user.role === "business" || user.businessId) {
     return <ShopTabNavigator />;
   }
 

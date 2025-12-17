@@ -61,7 +61,28 @@ export const authService = {
     try {
       const userDoc = await db.collection("users").doc(effectiveUid).get();
       if (userDoc.exists) {
-        return userDoc.data() as AuthUser;
+        const data = userDoc.data() as Partial<AuthUser> & { [key: string]: any };
+        const normalized: AuthUser = {
+          id: data.id || effectiveUid,
+          name: data.name || "",
+          email: data.email || "",
+          phone: data.phone || "",
+          // Fallback: if role missing but businessId exists, treat as business
+          role: (data.role as any) || (data.businessId ? "business" : "customer"),
+          businessId: data.businessId,
+          businessName: data.businessName,
+          description: data.description,
+          category: data.category,
+          categories: data.categories,
+          district: data.district,
+          city: data.city,
+          address: data.address,
+          fullAddress: data.fullAddress,
+          latitude: data.latitude,
+          longitude: data.longitude,
+          amenities: data.amenities,
+        };
+        return normalized;
       }
       return null;
     } catch (error) {
