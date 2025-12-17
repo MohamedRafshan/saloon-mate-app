@@ -297,7 +297,7 @@ export function ShopAppointmentsScreen() {
                     <Text style={styles.customerName}>
                       {appointment.customerId}
                     </Text>
-                    {appointment.customerPhone && (
+                    {/* {appointment.customerPhone && (
                       <Text style={styles.customerContact}>
                         📞 {appointment.customerPhone}
                       </Text>
@@ -306,7 +306,7 @@ export function ShopAppointmentsScreen() {
                       <Text style={styles.customerContact}>
                         ✉️ {appointment.customerEmail}
                       </Text>
-                    )}
+                    )} */}
                   </View>
                   <View
                     style={[

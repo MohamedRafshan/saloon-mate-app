@@ -11,4 +11,5 @@ export interface Booking {
   paymentStatus: "pending" | "paid" | "failed";
   notes?: string;
   createdAt: string;
+  notificationIds?: string[];
 }

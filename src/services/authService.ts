@@ -2,6 +2,7 @@ import { doc, setDoc } from "firebase/firestore";
 import { salonService } from "../api/salonService";
 import { auth, db, firebase } from "../firebaseConfig";
 import { Salon } from "../types/Salon";
+import { presentLocalNotification, registerPushToken } from "./notifications";
 
 export interface AuthUser {
   id: string;
@@ -74,14 +75,12 @@ export const authService = {
     if (!email || !password) {
       throw new Error("Email and password are required for login.");
     }
-    console.log(email);
 
     try {
       const userCredential = await auth.signInWithEmailAndPassword(
         email,
         password
       );
-      console.log(email, password);
 
       const user = userCredential.user;
       if (!user) {
@@ -91,7 +90,14 @@ export const authService = {
       if (!authUser) {
         throw new Error("User data not found in Firestore.");
       }
-      console.log("created", authUser);
+
+      // Register for push notifications
+      await registerPushToken();
+      // Send a welcome back notification
+      presentLocalNotification(
+        "Welcome Back!",
+        `You have successfully logged in as ${authUser.name}`
+      );
 
       return authUser;
     } catch (error: any) {
@@ -106,8 +112,6 @@ export const authService = {
       throw new Error("Email is required for registration.");
     }
 
-    console.log(userData);
-
     try {
       const userCredential = await auth.createUserWithEmailAndPassword(
         userData.email,
@@ -117,7 +121,6 @@ export const authService = {
       if (!user) {
         throw new Error("User not found after registration.");
       }
-      console.log("check1");
 
       const newUser: AuthUser = {
         id: user.uid,
@@ -126,8 +129,6 @@ export const authService = {
         phone: userData.phone || "",
         role: userData.role || "customer",
       };
-
-      console.log("check2");
 
       if (newUser.role === "business") {
         const salonData: Partial<Salon> = {
@@ -148,15 +149,11 @@ export const authService = {
         const salonId = await salonService.createSalon(user.uid, salonData);
         newUser.businessId = salonId;
       }
-      console.log("check3");
       // Save the user profile to Firestore
-      try {
-        await setDoc(doc(db, "users", user.uid), newUser);
-      } catch (error) {
-        console.log("Error saving user to Firestore:", error);
-      }
-      // await db.collection("users").doc(user.uid).set(newUser);
-      console.log("check4");
+      await setDoc(doc(db, "users", user.uid), newUser);
+
+      // Register for push notifications
+      await registerPushToken();
 
       return newUser;
     } catch (error: any) {

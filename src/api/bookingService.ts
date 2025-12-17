@@ -10,13 +10,17 @@ import {
   updateDoc,
   where,
 } from "firebase/firestore";
+import * as Notifications from "expo-notifications";
 import { db } from "../firebaseConfig";
 import {
   CACHE_EXPIRATION,
   CACHE_KEYS,
   cacheService,
 } from "../services/cacheService";
-import { sendPushNotification } from "../services/notifications";
+import {
+  sendPushNotification,
+  scheduleLocalNotification,
+} from "../services/notifications";
 import { Booking } from "../types/Booking";
 
 export const bookingService = {
@@ -90,13 +94,15 @@ export const bookingService = {
 
     // Invalidate customer and salon bookings caches
     if (bookingData.customerId) {
-      await cacheService.remove(CACHE_KEYS.USER_BOOKINGS(bookingData.customerId));
+      await cacheService.remove(
+        CACHE_KEYS.USER_BOOKINGS(bookingData.customerId)
+      );
     }
     if (bookingData.salonId) {
       await cacheService.remove(`bookings:salon:${bookingData.salonId}`);
     }
 
-    // Notify salon owner about the new booking (best-effort, non-blocking)
+    // Notify salon owner about the new booking
     try {
       await notifySalonOwnerOfBooking(docRef.id, {
         ...newBookingData,
@@ -104,6 +110,11 @@ export const bookingService = {
       } as Booking);
     } catch (e) {
       console.warn("Failed to notify salon owner of booking", e);
+    }
+
+    // Schedule reminders for the customer
+    if (bookingData.date && bookingData.time) {
+      scheduleAppointmentReminders(bookingData as Booking);
     }
 
     return {
@@ -119,17 +130,70 @@ export const bookingService = {
   ): Promise<void> {
     const bookingDocRef = doc(db, "bookings", bookingId);
     await updateDoc(bookingDocRef, { status });
-    // Invalidate all booking caches since status changed
     await cacheService.clearPattern("bookings:*");
   },
 
   async cancelBooking(bookingId: string): Promise<void> {
     const bookingDocRef = doc(db, "bookings", bookingId);
+    const booking = (await getDoc(bookingDocRef)).data() as Booking;
+    if (booking.notificationIds) {
+      for (const id of booking.notificationIds) {
+        await Notifications.cancelScheduledNotificationAsync(id);
+      }
+    }
     await updateDoc(bookingDocRef, { status: "cancelled" });
-    // Invalidate all booking caches
     await cacheService.clearPattern("bookings:*");
   },
 };
+
+async function scheduleAppointmentReminders(booking: Booking) {
+  const appointmentDate = new Date(`${booking.date}T${booking.time}`);
+  const now = new Date();
+  const notificationIds: string[] = [];
+
+  // 24-hour reminder
+  const twentyFourHoursBefore = new Date(
+    appointmentDate.getTime() - 24 * 60 * 60 * 1000
+  );
+  if (twentyFourHoursBefore > now) {
+    const seconds = (twentyFourHoursBefore.getTime() - now.getTime()) / 1000;
+    const id = await scheduleLocalNotification(
+      "Appointment Reminder",
+      `Your appointment at ${booking.salonId} is in 24 hours.`,
+      seconds
+    );
+    if (id) notificationIds.push(id);
+  }
+
+  // 1-hour reminder
+  const oneHourBefore = new Date(
+    appointmentDate.getTime() - 60 * 60 * 1000
+  );
+  if (oneHourBefore > now) {
+    const seconds = (oneHourBefore.getTime() - now.getTime()) / 1000;
+    const id = await scheduleLocalNotification(
+      "Appointment Reminder",
+      `Your appointment at ${booking.salonId} is in 1 hour.`,
+      seconds
+    );
+    if (id) notificationIds.push(id);
+  }
+  // At booking time
+  if (appointmentDate > now) {
+    const seconds = (appointmentDate.getTime() - now.getTime()) / 1000;
+    const id = await scheduleLocalNotification(
+      "Appointment Time!",
+      `It's time for your appointment at ${booking.salonId}.`,
+      seconds
+    );
+    if (id) notificationIds.push(id);
+  }
+
+  if (notificationIds.length > 0) {
+    const bookingDocRef = doc(db, "bookings", booking.id);
+    await updateDoc(bookingDocRef, { notificationIds });
+  }
+}
 
 async function notifySalonOwnerOfBooking(
   bookingId: string,
@@ -189,12 +253,13 @@ function mapBooking(id: string, data: any): Booking {
     totalPrice:
       typeof data.totalPrice === "string"
         ? Number(data.totalPrice)
-        : data.totalPrice,
+        e,
     paymentStatus: data.paymentStatus,
     notes: data.notes,
     createdAt:
       data.createdAt instanceof Timestamp
         ? data.createdAt.toDate().toISOString()
         : data.createdAt,
+    notificationIds: data.notificationIds || [],
   } as Booking;
 }
