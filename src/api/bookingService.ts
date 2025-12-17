@@ -10,22 +10,35 @@ import {
   where,
 } from "firebase/firestore";
 import { db } from "../firebaseConfig";
+import { CACHE_EXPIRATION, CACHE_KEYS, cacheService } from "../services/cacheService";
 import { sendPushNotification } from "../services/notifications";
 import { Booking } from "../types/Booking";
 
 export const bookingService = {
   async getCustomerBookings(customerId: string): Promise<Booking[]> {
-    const bookingsCol = collection(db, "bookings");
-    const q = query(bookingsCol, where("customerId", "==", customerId));
-    const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map((docSnap) => mapBooking(docSnap.id, docSnap.data()));
+    return cacheService.getOrFetch(
+      CACHE_KEYS.USER_BOOKINGS(customerId),
+      async () => {
+        const bookingsCol = collection(db, "bookings");
+        const q = query(bookingsCol, where("customerId", "==", customerId));
+        const querySnapshot = await getDocs(q);
+        return querySnapshot.docs.map((docSnap) => mapBooking(docSnap.id, docSnap.data()));
+      },
+      { expirationTime: CACHE_EXPIRATION.SHORT }
+    );
   },
 
   async getSalonBookings(salonId: string): Promise<Booking[]> {
-    const bookingsCol = collection(db, "bookings");
-    const q = query(bookingsCol, where("salonId", "==", salonId));
-    const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map((docSnap) => mapBooking(docSnap.id, docSnap.data()));
+    return cacheService.getOrFetch(
+      `bookings:salon:${salonId}`,
+      async () => {
+        const bookingsCol = collection(db, "bookings");
+        const q = query(bookingsCol, where("salonId", "==", salonId));
+        const querySnapshot = await getDocs(q);
+        return querySnapshot.docs.map((docSnap) => mapBooking(docSnap.id, docSnap.data()));
+      },
+      { expirationTime: CACHE_EXPIRATION.SHORT }
+    );
   },
 
   async createBooking(bookingData: Partial<Booking>): Promise<Booking> {
@@ -37,6 +50,14 @@ export const bookingService = {
       paymentStatus: "pending",
     };
     const docRef = await addDoc(bookingsCol, newBookingData);
+
+    // Invalidate customer and salon bookings caches
+    if (bookingData.customerId) {
+      await cacheService.remove(CACHE_KEYS.USER_BOOKINGS(bookingData.customerId));
+    }
+    if (bookingData.salonId) {
+      await cacheService.remove(`bookings:salon:${bookingData.salonId}`);
+    }
 
     // Notify salon owner about the new booking (best-effort, non-blocking)
     try {
@@ -61,11 +82,15 @@ export const bookingService = {
   ): Promise<void> {
     const bookingDocRef = doc(db, "bookings", bookingId);
     await updateDoc(bookingDocRef, { status });
+    // Invalidate all booking caches since status changed
+    await cacheService.clearPattern('bookings:*');
   },
 
   async cancelBooking(bookingId: string): Promise<void> {
     const bookingDocRef = doc(db, "bookings", bookingId);
     await updateDoc(bookingDocRef, { status: "cancelled" });
+    // Invalidate all booking caches
+    await cacheService.clearPattern('bookings:*');
   },
 };
 
