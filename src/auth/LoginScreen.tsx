@@ -40,9 +40,11 @@ export const LoginScreen = () => {
     setLoading(true);
     try {
       const { authService } = await import("../services/authService");
-      await authService.login(email, password);
-      // The navigation will be handled by the auth state listener
+      const user = await authService.login(email, password);
+      console.log("Login successful, user:", user);
+      // Navigation will be handled automatically by the auth state listener in app/index.tsx
     } catch (error: any) {
+      console.error("Login error:", error);
       Alert.alert("Error", error.message || "Invalid email or password");
     } finally {
       setLoading(false);

@@ -1,6 +1,6 @@
 import { createStackNavigator } from "@react-navigation/stack";
-import React, { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, AppState, StyleSheet, View } from "react-native";
+import React, { useEffect, useState } from "react";
+import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { AuthStack } from "../src/navigation/AuthStack";
 import { CustomerTabNavigator } from "../src/navigation/CustomerTabNavigator";
 import { ShopTabNavigator } from "../src/navigation/ShopTabNavigator";
@@ -15,6 +15,7 @@ export default function Page() {
   useEffect(() => {
     setIsLoading(true);
     const unsubscribe = authService.subscribe((user) => {
+      console.log("Auth state changed in index.tsx:", user?.email, user?.role);
       setUser(user);
       setIsLoading(false);
     });
@@ -30,21 +31,26 @@ export default function Page() {
     );
   }
 
+  // No user logged in - show customer app with auth stack available
+  if (!user) {
+    return (
+      <RootStack.Navigator screenOptions={{ headerShown: false }}>
+        <RootStack.Screen
+          name="CustomerTabNavigator"
+          component={CustomerTabNavigator}
+        />
+        <RootStack.Screen name="AuthStack" component={AuthStack} />
+      </RootStack.Navigator>
+    );
+  }
+
   // Business user - show shop dashboard
-  if (user && user.role === "business") {
+  if (user.role === "business") {
     return <ShopTabNavigator />;
   }
 
-  // Default - show customer app (works for both logged in and logged out customers)
-  return (
-    <RootStack.Navigator screenOptions={{ headerShown: false }}>
-      <RootStack.Screen
-        name="CustomerTabNavigator"
-        component={CustomerTabNavigator}
-      />
-      <RootStack.Screen name="AuthStack" component={AuthStack} />
-    </RootStack.Navigator>
-  );
+  // Customer user - show customer app only (no auth stack)
+  return <CustomerTabNavigator />;
 }
 
 const styles = StyleSheet.create({

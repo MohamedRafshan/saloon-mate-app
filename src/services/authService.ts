@@ -69,7 +69,7 @@ export const authService = {
   },
 
   // Login
-  async login(email: string, password: string): Promise<any> {
+  async login(email: string, password: string): Promise<AuthUser> {
     if (!email || !password) {
       throw new Error("Email and password are required for login.");
     }
@@ -93,8 +93,9 @@ export const authService = {
       console.log("created", authUser);
 
       return authUser;
-    } catch (error) {
+    } catch (error: any) {
       console.log("Error login", error);
+      throw new Error(error.message || "Login failed");
     }
   },
 
@@ -157,8 +158,9 @@ export const authService = {
       console.log("check4");
 
       return newUser;
-    } catch (error) {
+    } catch (error: any) {
       console.log("Error register", error);
+      throw new Error(error.message || "Registration failed");
     }
   },
   // Clear authentication data (sign out)
