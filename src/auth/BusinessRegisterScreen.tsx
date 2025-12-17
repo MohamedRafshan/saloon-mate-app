@@ -334,7 +334,7 @@ export const BusinessRegisterScreen = () => {
         "Your business account has been created. Please log in.",
         [{ text: "OK", onPress: () => navigation.navigate("Login") }]
       );
-      navigation.navigate({ name: "SalonProfile" } as never);
+      navigation.navigate({ name: "SaloonProfile" } as never);
       // The navigation will be handled by the auth state listener
     } catch (error: any) {
       Alert.alert(

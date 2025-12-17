@@ -36,6 +36,7 @@ export const LoginScreen = () => {
       Alert.alert("Error", "Please enter email and password");
       return;
     }
+    console.log("here");
 
     setLoading(true);
     try {
