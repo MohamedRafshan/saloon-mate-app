@@ -1,5 +1,5 @@
 import { useNavigation } from "@react-navigation/native";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -7,37 +7,115 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { bookingService } from "../../api/bookingService";
+import { authService, AuthUser } from "../../services/authService";
+import { reviewService } from "../../services/reviewService";
+import { Booking } from "../../types/Booking";
+import { Review } from "../../types/Review";
 
 export function ShopDashboardScreen() {
   const navigation = useNavigation<any>();
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const authUnsubscribe = authService.subscribe((authUser) => {
+      setUser(authUser);
+      if (authUser?.businessId) {
+        const bookingUnsubscribe = bookingService.subscribeToSalonBookings(
+          authUser.businessId,
+          (newBookings) => {
+            setBookings(newBookings);
+            setLoading(false);
+          }
+        );
+
+        const reviewUnsubscribe = reviewService.subscribeToSalonReviews(
+          authUser.businessId,
+          (newReviews) => {
+            setReviews(newReviews);
+          }
+        );
+
+        return () => {
+          bookingUnsubscribe();
+          reviewUnsubscribe();
+        };
+      }
+      setLoading(false);
+      return () => {};
+    });
+
+    return () => authUnsubscribe();
+  }, []);
+
+  const getTodayBookings = () => {
+    const today = new Date().toISOString().split("T")[0];
+    return bookings.filter((b) => b.date === today);
+  };
+
+  const getThisWeekBookings = () => {
+    const today = new Date();
+    const firstDayOfWeek = new Date(
+      today.setDate(today.getDate() - today.getDay())
+    )
+      .toISOString()
+      .split("T")[0];
+    return bookings.filter((b) => b.date >= firstDayOfWeek);
+  };
+
+  const calculateRevenue = () => {
+    return bookings
+      .filter((b) => b.status === "completed")
+      .reduce((acc, b) => acc + b.totalPrice, 0);
+  };
+
+  const calculateAverageRating = () => {
+    if (reviews.length === 0) return "N/A";
+    const total = reviews.reduce((acc, r) => acc + r.rating, 0);
+    return (total / reviews.length).toFixed(1);
+  };
+
   const stats = [
-    { label: "Today's Bookings", value: "12", icon: "📅" },
-    { label: "This Week", value: "48", icon: "📊" },
-    { label: "Revenue", value: "$2,450", icon: "💰" },
-    { label: "Rating", value: "4.8", icon: "⭐" },
+    {
+      label: "Today's Bookings",
+      value: getTodayBookings().length.toString(),
+      icon: "📅",
+    },
+    {
+      label: "This Week",
+      value: getThisWeekBookings().length.toString(),
+      icon: "📊",
+    },
+    {
+      label: "Revenue",
+      value: `$${calculateRevenue().toFixed(2)}`,
+      icon: "💰",
+    },
+    { label: "Rating", value: calculateAverageRating(), icon: "⭐" },
   ];
 
-  const recentBookings = [
-    { id: "1", customer: "John Doe", service: "Haircut", time: "10:00 AM" },
-    {
-      id: "2",
-      customer: "Jane Smith",
-      service: "Hair Color",
-      time: "11:30 AM",
-    },
-    {
-      id: "3",
-      customer: "Mike Johnson",
-      service: "Beard Trim",
-      time: "2:00 PM",
-    },
-  ];
+  const recentBookings = bookings
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 3);
+
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <Text>Loading dashboard...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Business Dashboard</Text>
-        <Text style={styles.headerSubtitle}>Welcome back!</Text>
+        <Text style={styles.headerSubtitle}>
+          Welcome back, {user?.name || "User"}!
+        </Text>
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -56,20 +134,30 @@ export function ShopDashboardScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Recent Bookings</Text>
-            <TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => navigation.navigate("ShopAppointments")}
+            >
               <Text style={styles.seeAllText}>See all</Text>
             </TouchableOpacity>
           </View>
 
-          {recentBookings.map((booking) => (
-            <View key={booking.id} style={styles.bookingCard}>
-              <View style={styles.bookingInfo}>
-                <Text style={styles.customerName}>{booking.customer}</Text>
-                <Text style={styles.serviceName}>{booking.service}</Text>
+          {recentBookings.length > 0 ? (
+            recentBookings.map((booking) => (
+              <View key={booking.id} style={styles.bookingCard}>
+                <View style={styles.bookingInfo}>
+                  <Text style={styles.customerName}>
+                    Booking #{booking.id.substring(0, 5)}
+                  </Text>
+                  <Text style={styles.serviceName}>
+                    {booking.date} at {booking.time}
+                  </Text>
+                </View>
+                <Text style={styles.bookingTime}>${booking.totalPrice}</Text>
               </View>
-              <Text style={styles.bookingTime}>{booking.time}</Text>
-            </View>
-          ))}
+            ))
+          ) : (
+            <Text>No recent bookings.</Text>
+          )}
         </View>
 
         {/* Quick Actions */}

@@ -4,13 +4,18 @@ import {
   doc,
   getDoc,
   getDocs,
+  onSnapshot,
   query,
   Timestamp,
   updateDoc,
   where,
 } from "firebase/firestore";
 import { db } from "../firebaseConfig";
-import { CACHE_EXPIRATION, CACHE_KEYS, cacheService } from "../services/cacheService";
+import {
+  CACHE_EXPIRATION,
+  CACHE_KEYS,
+  cacheService,
+} from "../services/cacheService";
 import { sendPushNotification } from "../services/notifications";
 import { Booking } from "../types/Booking";
 
@@ -22,10 +27,26 @@ export const bookingService = {
         const bookingsCol = collection(db, "bookings");
         const q = query(bookingsCol, where("customerId", "==", customerId));
         const querySnapshot = await getDocs(q);
-        return querySnapshot.docs.map((docSnap) => mapBooking(docSnap.id, docSnap.data()));
+        return querySnapshot.docs.map((docSnap) =>
+          mapBooking(docSnap.id, docSnap.data())
+        );
       },
       { expirationTime: CACHE_EXPIRATION.SHORT }
     );
+  },
+
+  subscribeToCustomerBookings(
+    customerId: string,
+    callback: (bookings: Booking[]) => void
+  ): () => void {
+    const bookingsCol = collection(db, "bookings");
+    const q = query(bookingsCol, where("customerId", "==", customerId));
+    return onSnapshot(q, (snapshot) => {
+      const bookings = snapshot.docs.map((docSnap) =>
+        mapBooking(docSnap.id, docSnap.data())
+      );
+      callback(bookings);
+    });
   },
 
   async getSalonBookings(salonId: string): Promise<Booking[]> {
@@ -35,10 +56,26 @@ export const bookingService = {
         const bookingsCol = collection(db, "bookings");
         const q = query(bookingsCol, where("salonId", "==", salonId));
         const querySnapshot = await getDocs(q);
-        return querySnapshot.docs.map((docSnap) => mapBooking(docSnap.id, docSnap.data()));
+        return querySnapshot.docs.map((docSnap) =>
+          mapBooking(docSnap.id, docSnap.data())
+        );
       },
       { expirationTime: CACHE_EXPIRATION.SHORT }
     );
+  },
+
+  subscribeToSalonBookings(
+    salonId: string,
+    callback: (bookings: Booking[]) => void
+  ): () => void {
+    const bookingsCol = collection(db, "bookings");
+    const q = query(bookingsCol, where("salonId", "==", salonId));
+    return onSnapshot(q, (snapshot) => {
+      const bookings = snapshot.docs.map((docSnap) =>
+        mapBooking(docSnap.id, docSnap.data())
+      );
+      callback(bookings);
+    });
   },
 
   async createBooking(bookingData: Partial<Booking>): Promise<Booking> {
@@ -83,14 +120,14 @@ export const bookingService = {
     const bookingDocRef = doc(db, "bookings", bookingId);
     await updateDoc(bookingDocRef, { status });
     // Invalidate all booking caches since status changed
-    await cacheService.clearPattern('bookings:*');
+    await cacheService.clearPattern("bookings:*");
   },
 
   async cancelBooking(bookingId: string): Promise<void> {
     const bookingDocRef = doc(db, "bookings", bookingId);
     await updateDoc(bookingDocRef, { status: "cancelled" });
     // Invalidate all booking caches
-    await cacheService.clearPattern('bookings:*');
+    await cacheService.clearPattern("bookings:*");
   },
 };
 
@@ -114,7 +151,9 @@ async function notifySalonOwnerOfBooking(
 
     const servicesCount = bookingData.serviceIds?.length || 0;
     const title = "New booking received";
-    const body = `${bookingData.date || ""} ${bookingData.time || ""} • ${servicesCount} service(s)`;
+    const body = `${bookingData.date || ""} ${
+      bookingData.time || ""
+    } • ${servicesCount} service(s)`;
 
     await sendPushNotification(token, title, body, {
       bookingId,
@@ -130,8 +169,14 @@ async function notifySalonOwnerOfBooking(
 }
 
 function mapBooking(id: string, data: any): Booking {
-  const date = data.date instanceof Timestamp ? data.date.toDate().toISOString().split("T")[0] : data.date;
-  const time = data.time instanceof Timestamp ? data.time.toDate().toTimeString().substring(0, 5) : data.time;
+  const date =
+    data.date instanceof Timestamp
+      ? data.date.toDate().toISOString().split("T")[0]
+      : data.date;
+  const time =
+    data.time instanceof Timestamp
+      ? data.time.toDate().toTimeString().substring(0, 5)
+      : data.time;
   return {
     id,
     customerId: data.customerId,
@@ -141,7 +186,10 @@ function mapBooking(id: string, data: any): Booking {
     date,
     time,
     status: data.status,
-    totalPrice: typeof data.totalPrice === "string" ? Number(data.totalPrice) : data.totalPrice,
+    totalPrice:
+      typeof data.totalPrice === "string"
+        ? Number(data.totalPrice)
+        : data.totalPrice,
     paymentStatus: data.paymentStatus,
     notes: data.notes,
     createdAt:
