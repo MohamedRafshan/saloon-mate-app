@@ -20,26 +20,13 @@ export function StaffManagementScreen() {
   const [staffMembers, setStaffMembers] = useState<Staff[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch staff from backend on mount and when modal closes
-  const fetchStaff = async () => {
-    setLoading(true);
-    try {
-      const staffList = await staffService.getAll();
-      setStaffMembers(staffList || []);
-    } catch (e) {
-      setStaffMembers([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchStaff();
-    // Optionally: subscribe to staff changes for real-time updates
-    if (staffService.subscribe) {
-      const unsub = staffService.subscribe(fetchStaff);
-      return () => unsub && unsub();
-    }
+    const unsubscribe = staffService.subscribe((staffList: any) => {
+      setStaffMembers(staffList || []);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
   }, []);
 
   const handleAddStaff = () => {
@@ -63,7 +50,6 @@ export function StaffManagementScreen() {
           style: "destructive",
           onPress: async () => {
             await staffService.delete(staffId);
-            fetchStaff();
           },
         },
       ]
@@ -76,14 +62,12 @@ export function StaffManagementScreen() {
     } else {
       await staffService.create(staff);
     }
-    fetchStaff();
   };
 
   const toggleStaffActive = async (staffId: string) => {
     const staff = staffMembers.find((s) => s.id === staffId);
     if (staff) {
       await staffService.update(staffId, { active: !staff.active });
-      fetchStaff();
     }
   };
 
@@ -229,7 +213,7 @@ export function StaffManagementScreen() {
           </>
         )}
 
-        {staffMembers.length === 0 && (
+        {staffMembers.length === 0 && !loading && (
           <View style={styles.emptyState}>
             <Text style={styles.emptyStateIcon}>👥</Text>
             <Text style={styles.emptyStateText}>No staff members yet</Text>
