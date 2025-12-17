@@ -1,6 +1,7 @@
 import { useNavigation } from "@react-navigation/native";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   ScrollView,
   StyleSheet,
@@ -8,10 +9,34 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { authService } from "../../services/authService";
+import { authService, AuthUser } from "../../services/authService";
 
 export function ShopProfileScreen() {
   const navigation = useNavigation<any>();
+
+  // Add state for business user
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+    const fetchUser = async () => {
+      setLoading(true);
+      try {
+        const u = await authService.getUser();
+        if (mounted) setUser(u);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+    fetchUser();
+    // Listen to auth changes for real-time update
+    const unsubscribe = authService.subscribe(fetchUser);
+    return () => {
+      mounted = false;
+      unsubscribe && unsubscribe();
+    };
+  }, []);
 
   const handleLogout = () => {
     Alert.alert("Logout", "Are you sure you want to logout?", [
@@ -64,15 +89,25 @@ export function ShopProfileScreen() {
     },
   ];
 
+  if (loading) {
+    return (
+      <View style={styles.header}>
+        <ActivityIndicator size="large" color="#6C5CE7" />
+      </View>
+    );
+  }
+
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
         <View style={styles.businessAvatar}>
           <Text style={styles.businessAvatarText}>🏢</Text>
         </View>
-        <Text style={styles.businessName}>Luxe Salon & Spa</Text>
-        <Text style={styles.businessEmail}>business@luxesalon.com</Text>
-        <Text style={styles.businessPhone}>+1 234 567 8900</Text>
+        <Text style={styles.businessName}>
+          {user?.businessName || user?.name || "Business Name"}
+        </Text>
+        <Text style={styles.businessEmail}>{user?.email || "Email"}</Text>
+        <Text style={styles.businessPhone}>{user?.phone || "Phone"}</Text>
 
         <View style={styles.statsRow}>
           <View style={styles.stat}>
