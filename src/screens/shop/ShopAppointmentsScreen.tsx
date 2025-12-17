@@ -19,7 +19,10 @@ import { Salon } from "../../types/Salon";
 import { Service } from "../../types/Service";
 
 export function ShopAppointmentsScreen() {
-  const [filter, setFilter] = useState<"today" | "upcoming" | "past">("today");
+  // Change filter type to include "all"
+  const [filter, setFilter] = useState<"all" | "today" | "upcoming" | "past">(
+    "all"
+  );
   const [appointments, setAppointments] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -129,6 +132,9 @@ export function ShopAppointmentsScreen() {
   const now = new Date();
   const filteredAppointments = appointments.filter((booking) => {
     const bookingDate = new Date(booking.date);
+    if (filter === "all") {
+      return true;
+    }
     if (filter === "today") {
       return (
         bookingDate.getDate() === now.getDate() &&
@@ -194,6 +200,19 @@ export function ShopAppointmentsScreen() {
       {/* Filter Tabs */}
       <View style={styles.filterContainer}>
         <TouchableOpacity
+          style={[styles.filterTab, filter === "all" && styles.filterTabActive]}
+          onPress={() => setFilter("all")}
+        >
+          <Text
+            style={[
+              styles.filterText,
+              filter === "all" && styles.filterTextActive,
+            ]}
+          >
+            All
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
           style={[
             styles.filterTab,
             filter === "today" && styles.filterTabActive,
@@ -222,7 +241,7 @@ export function ShopAppointmentsScreen() {
               filter === "upcoming" && styles.filterTextActive,
             ]}
           >
-            Upcoming
+            Upcome
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -264,12 +283,31 @@ export function ShopAppointmentsScreen() {
             const bookingServices = appointment.serviceIds.map(
               (id) => services[id]
             );
+            const totalDuration = bookingServices.reduce((total, s) => {
+              const duration = s?.duration || "0";
+              const minutes = parseInt(duration);
+              return total + (isNaN(minutes) ? 0 : minutes);
+            }, 0);
+
             return (
               <View key={appointment.id} style={styles.appointmentCard}>
+                {/* Header: Customer and Status */}
                 <View style={styles.appointmentHeader}>
-                  <Text style={styles.customerName}>
-                    {appointment.customerId}
-                  </Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.customerName}>
+                      {appointment.customerId}
+                    </Text>
+                    {appointment.customerPhone && (
+                      <Text style={styles.customerContact}>
+                        📞 {appointment.customerPhone}
+                      </Text>
+                    )}
+                    {appointment.customerEmail && (
+                      <Text style={styles.customerContact}>
+                        ✉️ {appointment.customerEmail}
+                      </Text>
+                    )}
+                  </View>
                   <View
                     style={[
                       styles.statusBadge,
@@ -289,19 +327,87 @@ export function ShopAppointmentsScreen() {
                     </Text>
                   </View>
                 </View>
-                <Text style={styles.serviceName}>
-                  {bookingServices
-                    .map((s) => s?.name)
-                    .filter(Boolean)
-                    .join(", ")}
-                </Text>
-                <Text style={styles.appointmentTime}>
-                  📅 {formatDate(appointment.date)} 🕐 {appointment.time}
-                </Text>
+
+                {/* Booking ID */}
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>Booking ID:</Text>
+                  <Text style={styles.detailValue}>{appointment.id}</Text>
+                </View>
+
+                {/* Services */}
+                <View style={styles.servicesSection}>
+                  <Text style={styles.servicesLabel}>Services:</Text>
+                  {bookingServices.map((s) =>
+                    s ? (
+                      <View key={s.id} style={styles.serviceItem}>
+                        <Text style={styles.serviceName}>• {s.name}</Text>
+                        <Text style={styles.servicePrice}>${s.price}</Text>
+                        <Text style={styles.serviceDuration}>
+                          {s.duration} min
+                        </Text>
+                      </View>
+                    ) : null
+                  )}
+                  {bookingServices.length > 0 && (
+                    <Text style={styles.totalDuration}>
+                      Total Duration: {totalDuration} min
+                    </Text>
+                  )}
+                </View>
+
+                {/* Date, Time, Address */}
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>Date:</Text>
+                  <Text style={styles.detailValue}>
+                    {formatDate(appointment.date)}
+                  </Text>
+                </View>
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>Time:</Text>
+                  <Text style={styles.detailValue}>{appointment.time}</Text>
+                </View>
                 {salon?.address && (
-                  <Text style={styles.appointmentTime}>📍 {salon.address}</Text>
+                  <View style={styles.detailRow}>
+                    <Text style={styles.detailLabel}>Location:</Text>
+                    <Text style={styles.detailValue}>{salon.address}</Text>
+                  </View>
                 )}
 
+                {/* Payment Status and Total */}
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>Payment:</Text>
+                  <Text
+                    style={[
+                      styles.detailValue,
+                      {
+                        color:
+                          appointment.paymentStatus === "paid"
+                            ? "#4CAF50"
+                            : "#FFA500",
+                      },
+                    ]}
+                  >
+                    {appointment.paymentStatus
+                      ? appointment.paymentStatus.toUpperCase()
+                      : "N/A"}
+                  </Text>
+                </View>
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>Total:</Text>
+                  <Text style={[styles.detailValue, { fontWeight: "bold" }]}>
+                    ${appointment.totalPrice || 0}
+                  </Text>
+                </View>
+
+                {/* Notes */}
+                {appointment.notes ? (
+                  <View style={styles.notesSection}>
+                    <Text style={styles.notesLabel}>Notes:</Text>
+                    <Text style={styles.notesText}>{appointment.notes}</Text>
+                  </View>
+                ) : null}
+
+                {/* Action Buttons */}
                 <View style={styles.actionButtons}>
                   <TouchableOpacity style={styles.actionButtonSecondary}>
                     <Text style={styles.actionButtonSecondaryText}>
@@ -397,6 +503,11 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#000",
   },
+  customerContact: {
+    fontSize: 13,
+    color: "#666",
+    marginTop: 2,
+  },
   statusBadge: {
     paddingHorizontal: 12,
     paddingVertical: 4,
@@ -407,15 +518,81 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     textTransform: "capitalize",
   },
-  serviceName: {
+  detailRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 4,
+    marginTop: 2,
+  },
+  detailLabel: {
     fontSize: 14,
-    color: "#666",
+    color: "#888",
+    fontWeight: "500",
+  },
+  detailValue: {
+    fontSize: 14,
+    color: "#222",
+    fontWeight: "500",
+    flexShrink: 1,
+    textAlign: "right",
+  },
+  servicesSection: {
+    marginTop: 8,
     marginBottom: 8,
   },
-  appointmentTime: {
+  servicesLabel: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#333",
+    marginBottom: 4,
+  },
+  serviceItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 2,
+    gap: 8,
+  },
+  serviceName: {
+    fontSize: 14,
+    color: "#444",
+    flex: 1,
+  },
+  servicePrice: {
+    fontSize: 14,
+    color: "#6C5CE7",
+    fontWeight: "600",
+    marginLeft: 8,
+  },
+  serviceDuration: {
+    fontSize: 13,
+    color: "#888",
+    marginLeft: 8,
+  },
+  totalDuration: {
+    fontSize: 13,
+    color: "#888",
+    fontStyle: "italic",
+    marginTop: 2,
+    marginBottom: 2,
+    textAlign: "right",
+  },
+  notesSection: {
+    backgroundColor: "#F5F5F5",
+    borderRadius: 8,
+    padding: 10,
+    marginTop: 8,
+    marginBottom: 8,
+  },
+  notesLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#333",
+    marginBottom: 2,
+  },
+  notesText: {
     fontSize: 14,
     color: "#666",
-    marginBottom: 8,
   },
   actionButtons: {
     flexDirection: "row",
