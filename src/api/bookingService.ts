@@ -40,7 +40,10 @@ export const bookingService = {
 
     // Notify salon owner about the new booking (best-effort, non-blocking)
     try {
-      await notifySalonOwnerOfBooking(docRef.id, newBookingData as Booking);
+      await notifySalonOwnerOfBooking(docRef.id, {
+        ...newBookingData,
+        createdAt: newBookingData.createdAt.toDate().toISOString(),
+      } as Booking);
     } catch (e) {
       console.warn("Failed to notify salon owner of booking", e);
     }

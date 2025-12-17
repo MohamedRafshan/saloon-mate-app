@@ -1,92 +1,189 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
+  Alert,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import { bookingService } from "../../api/bookingService";
+import { salonService } from "../../api/salonService";
+import { authService, AuthUser } from "../../services/authService"; // If you want to check shop auth
+import { serviceService } from "../../services/serviceService";
+import { theme } from "../../theme";
+import { Booking } from "../../types/Booking";
+import { Salon } from "../../types/Salon";
+import { Service } from "../../types/Service";
 
 export function ShopAppointmentsScreen() {
   const [filter, setFilter] = useState<"today" | "upcoming" | "past">("today");
+  const [appointments, setAppointments] = useState<Booking[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [salons, setSalons] = useState<{ [key: string]: Salon }>({});
+  const [services, setServices] = useState<{ [key: string]: Service }>({});
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  const appointments = {
-    today: [
-      {
-        id: "1",
-        customer: "John Doe",
-        service: "Haircut",
-        time: "10:00 AM",
-        status: "confirmed",
-      },
-      {
-        id: "2",
-        customer: "Jane Smith",
-        service: "Hair Color",
-        time: "11:30 AM",
-        status: "confirmed",
-      },
-      {
-        id: "3",
-        customer: "Mike Johnson",
-        service: "Beard Trim",
-        time: "2:00 PM",
-        status: "pending",
-      },
-      {
-        id: "4",
-        customer: "Sarah Williams",
-        service: "Manicure",
-        time: "3:30 PM",
-        status: "confirmed",
-      },
-    ],
-    upcoming: [
-      {
-        id: "5",
-        customer: "David Brown",
-        service: "Haircut",
-        time: "Tomorrow 10:00 AM",
-        status: "confirmed",
-      },
-      {
-        id: "6",
-        customer: "Emma Davis",
-        service: "Facial",
-        time: "Tomorrow 2:00 PM",
-        status: "confirmed",
-      },
-    ],
-    past: [
-      {
-        id: "7",
-        customer: "James Wilson",
-        service: "Haircut",
-        time: "Yesterday 4:00 PM",
-        status: "completed",
-      },
-      {
-        id: "8",
-        customer: "Olivia Taylor",
-        service: "Pedicure",
-        time: "Yesterday 5:30 PM",
-        status: "completed",
-      },
-    ],
+  useEffect(() => {
+    checkAuthAndLoadAppointments();
+  }, []);
+
+  useEffect(() => {
+    // Subscribe to auth changes
+    const unsubscribe = authService.subscribe(() => {
+      checkAuthAndLoadAppointments();
+    });
+    return unsubscribe;
+  }, []);
+
+  const checkAuthAndLoadAppointments = async () => {
+    setLoading(true);
+    try {
+      const authenticated = await authService.isAuthenticated();
+      const user = await authService.getUser();
+
+      if (
+        !authenticated ||
+        !user ||
+        user.role !== "business" ||
+        !user.businessId
+      ) {
+        setIsAuthenticated(false);
+        setCurrentUser(null);
+        setAppointments([]);
+        setLoading(false);
+        setRefreshing(false);
+        return;
+      }
+
+      setIsAuthenticated(true);
+      setCurrentUser(user);
+      await loadAppointments(user.businessId);
+    } catch (error) {
+      setIsAuthenticated(false);
+      setCurrentUser(null);
+      setAppointments([]);
+      setLoading(false);
+      setRefreshing(false);
+    }
   };
 
-  const getStatusColor = (status: string) => {
+  // Accept shopId as parameter
+  const loadAppointments = async (shopId?: string) => {
+    setLoading(true);
+    try {
+      if (!shopId) {
+        setAppointments([]);
+        setLoading(false);
+        setRefreshing(false);
+        return;
+      }
+      const data = await bookingService.getSalonBookings(shopId);
+      setAppointments(data || []);
+
+      // Load salon and service details for each booking
+      const salonMap: { [key: string]: Salon } = {};
+      const serviceMap: { [key: string]: Service } = {};
+      for (const booking of data || []) {
+        if (!salonMap[booking.salonId]) {
+          try {
+            const salon = await salonService.getSalonById(booking.salonId);
+            salonMap[booking.salonId] = salon;
+          } catch {
+            // ignore
+          }
+        }
+        if (booking.serviceIds && booking.serviceIds.length) {
+          const servicesArr = await serviceService.getBySalonId(
+            booking.salonId
+          );
+          servicesArr.forEach((svc) => {
+            serviceMap[svc.id] = svc;
+          });
+        }
+      }
+      setSalons(salonMap);
+      setServices(serviceMap);
+    } catch {
+      Alert.alert("Error", "Failed to load appointments");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    if (currentUser && currentUser.businessId) {
+      loadAppointments(currentUser.businessId);
+    } else {
+      setRefreshing(false);
+    }
+  };
+
+  // Filter logic
+  const now = new Date();
+  const filteredAppointments = appointments.filter((booking) => {
+    const bookingDate = new Date(booking.date);
+    if (filter === "today") {
+      return (
+        bookingDate.getDate() === now.getDate() &&
+        bookingDate.getMonth() === now.getMonth() &&
+        bookingDate.getFullYear() === now.getFullYear()
+      );
+    } else if (filter === "upcoming") {
+      return bookingDate > now;
+    } else {
+      return bookingDate < now;
+    }
+  });
+
+  const getStatusColor = (status: Booking["status"]) => {
     switch (status) {
       case "confirmed":
-        return "#00C853";
+        return theme.colors.primary || "#00C853";
       case "pending":
         return "#FFA726";
       case "completed":
         return "#666";
+      case "cancelled":
+        return "#F44336";
       default:
         return "#666";
     }
   };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      weekday: "short",
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.centered}>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
+      </View>
+    );
+  }
+
+  if (!isAuthenticated || !currentUser) {
+    return (
+      <View style={styles.centered}>
+        <Text style={{ fontSize: 18, color: "#666" }}>
+          Please log in as a business to view appointments.
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -146,42 +243,79 @@ export function ShopAppointmentsScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {appointments[filter].map((appointment) => (
-          <View key={appointment.id} style={styles.appointmentCard}>
-            <View style={styles.appointmentHeader}>
-              <Text style={styles.customerName}>{appointment.customer}</Text>
-              <View
-                style={[
-                  styles.statusBadge,
-                  {
-                    backgroundColor: getStatusColor(appointment.status) + "20",
-                  },
-                ]}
-              >
-                <Text
-                  style={[
-                    styles.statusText,
-                    { color: getStatusColor(appointment.status) },
-                  ]}
-                >
-                  {appointment.status}
-                </Text>
-              </View>
-            </View>
-            <Text style={styles.serviceName}>{appointment.service}</Text>
-            <Text style={styles.appointmentTime}>🕐 {appointment.time}</Text>
-
-            <View style={styles.actionButtons}>
-              <TouchableOpacity style={styles.actionButtonSecondary}>
-                <Text style={styles.actionButtonSecondaryText}>Contact</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.actionButtonPrimary}>
-                <Text style={styles.actionButtonPrimaryText}>Details</Text>
-              </TouchableOpacity>
-            </View>
+      <ScrollView
+        style={styles.content}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
+        {filteredAppointments.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyIcon}>📅</Text>
+            <Text style={styles.emptyText}>No appointments</Text>
+            <Text style={styles.emptySubtext}>
+              Appointments will appear here
+            </Text>
           </View>
-        ))}
+        ) : (
+          filteredAppointments.map((appointment) => {
+            const salon = salons[appointment.salonId];
+            const bookingServices = appointment.serviceIds.map(
+              (id) => services[id]
+            );
+            return (
+              <View key={appointment.id} style={styles.appointmentCard}>
+                <View style={styles.appointmentHeader}>
+                  <Text style={styles.customerName}>
+                    {appointment.customerId}
+                  </Text>
+                  <View
+                    style={[
+                      styles.statusBadge,
+                      {
+                        backgroundColor:
+                          getStatusColor(appointment.status) + "20",
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.statusText,
+                        { color: getStatusColor(appointment.status) },
+                      ]}
+                    >
+                      {appointment.status}
+                    </Text>
+                  </View>
+                </View>
+                <Text style={styles.serviceName}>
+                  {bookingServices
+                    .map((s) => s?.name)
+                    .filter(Boolean)
+                    .join(", ")}
+                </Text>
+                <Text style={styles.appointmentTime}>
+                  📅 {formatDate(appointment.date)} 🕐 {appointment.time}
+                </Text>
+                {salon?.address && (
+                  <Text style={styles.appointmentTime}>📍 {salon.address}</Text>
+                )}
+
+                <View style={styles.actionButtons}>
+                  <TouchableOpacity style={styles.actionButtonSecondary}>
+                    <Text style={styles.actionButtonSecondaryText}>
+                      Contact
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.actionButtonPrimary}>
+                    <Text style={styles.actionButtonPrimaryText}>Details</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            );
+          })
+        )}
       </ScrollView>
     </View>
   );
@@ -190,7 +324,13 @@ export function ShopAppointmentsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8F9FA",
+    backgroundColor: theme.colors?.white || "#F8F9FA",
+  },
+  centered: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: theme.colors?.white || "#fff",
   },
   header: {
     backgroundColor: "#fff",
@@ -275,7 +415,7 @@ const styles = StyleSheet.create({
   appointmentTime: {
     fontSize: 14,
     color: "#666",
-    marginBottom: 16,
+    marginBottom: 8,
   },
   actionButtons: {
     flexDirection: "row",
@@ -305,5 +445,24 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 14,
     fontWeight: "600",
+  },
+  emptyState: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 60,
+  },
+  emptyIcon: {
+    fontSize: 64,
+    marginBottom: 16,
+  },
+  emptyText: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#333",
+    marginBottom: 8,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: "#666",
   },
 });
