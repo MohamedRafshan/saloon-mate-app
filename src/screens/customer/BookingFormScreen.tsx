@@ -14,6 +14,7 @@ import {
 import { bookingService } from "../../api/bookingService";
 import { salonService } from "../../api/salonService";
 import { authService, AuthUser } from "../../services/authService";
+import { serviceService } from "../../services/serviceService";
 import { theme } from "../../theme";
 import { Booking } from "../../types/Booking";
 import { Salon } from "../../types/Salon";
@@ -80,11 +81,13 @@ export const BookingFormScreen = ({ route, navigation }: any) => {
       setCurrentUser(user);
 
       const salonData = await salonService.getSalonById(salonId);
-      // TODO: Replace getServicesBySalonId and getBookingsBySalonId with Firestore versions if available
-      setServices([]); // Placeholder, implement Firestore fetch for services
-      setExistingBookings([]); // Placeholder, implement Firestore fetch for bookings
+      const salonServices = await serviceService.getBySalonId(salonId);
+      const salonBookings = await bookingService.getSalonBookings(salonId);
+      setServices(salonServices);
+      setExistingBookings(salonBookings);
       setSalon(salonData);
     } catch (error) {
+      console.error("Booking load error", error);
       Alert.alert("Error", "Failed to load salon data");
     } finally {
       setLoading(false);
@@ -275,6 +278,7 @@ export const BookingFormScreen = ({ route, navigation }: any) => {
         },
       ]);
     } catch (error) {
+      console.error("Booking submit error", error);
       Alert.alert("Error", "Failed to book appointment. Please try again.");
     } finally {
       setSubmitting(false);

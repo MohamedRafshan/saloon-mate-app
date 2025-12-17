@@ -12,6 +12,7 @@ import {
 import reviewsData from "../../api/mock/reviews.json";
 import staffData from "../../api/mock/staff.json";
 import { salonService } from "../../api/salonService";
+import { serviceService } from "../../services/serviceService";
 import { Salon } from "../../types/Salon";
 import { Service } from "../../types/Service";
 
@@ -25,7 +26,7 @@ export const SalonProfileScreen = ({ route, navigation }: any) => {
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabType>("Services");
-  const [serviceCategory, setServiceCategory] = useState("Featured");
+  const [serviceCategory, setServiceCategory] = useState("All");
 
   useEffect(() => {
     if (salonId) {
@@ -35,13 +36,12 @@ export const SalonProfileScreen = ({ route, navigation }: any) => {
 
   const loadSalonData = async () => {
     try {
-      const [salonData] = await Promise.all([
+      const [salonData, servicesData] = await Promise.all([
         salonService.getSalonById(salonId),
+        serviceService.getBySalonId(salonId),
       ]);
-      // TODO: Replace getServicesBySalonId with Firestore version if available
-      setServices([]); // Placeholder, implement Firestore fetch for services
+      setServices(servicesData);
       setSalon(salonData);
-      // setServices(servicesData); // Removed: servicesData is undefined
     } catch (error) {
       console.error("Failed to load salon:", error);
     } finally {
@@ -62,14 +62,13 @@ export const SalonProfileScreen = ({ route, navigation }: any) => {
   const staff = staffData.filter((s: any) => s.salonId === salonId);
   const reviews = reviewsData.filter((r: any) => r.salonId === salonId);
   const serviceCategories = [
-    "Featured",
-    "Haircut",
-    "Wash & Styling",
-    "Hair Care",
+    "All",
+    ...Array.from(new Set(services.map((s) => s.category || "Other"))),
   ];
-  const filteredServices = services.filter(
-    (s: any) => s.category === serviceCategory
-  );
+  const filteredServices =
+    serviceCategory === "All"
+      ? services
+      : services.filter((s: any) => s.category === serviceCategory);
 
   const renderHeader = () => (
     <View style={styles.headerImageContainer}>
@@ -165,6 +164,10 @@ export const SalonProfileScreen = ({ route, navigation }: any) => {
           </TouchableOpacity>
         ))}
       </ScrollView>
+
+      {filteredServices.length === 0 && (
+        <Text style={{ marginTop: 12 }}>No services available.</Text>
+      )}
 
       {filteredServices.map((service: any) => (
         <View key={service.id} style={styles.serviceItem}>

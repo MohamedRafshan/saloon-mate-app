@@ -11,8 +11,9 @@ import {
   View,
 } from "react-native";
 import { bookingService } from "../../api/bookingService";
-import { mockAPI } from "../../api/mock";
+import { salonService } from "../../api/salonService";
 import { authService, AuthUser } from "../../services/authService";
+import { serviceService } from "../../services/serviceService";
 import { theme } from "../../theme";
 import { Booking } from "../../types/Booking";
 import { Salon } from "../../types/Salon";
@@ -84,15 +85,19 @@ export function MyBookingsScreen() {
 
       for (const booking of bookingsData) {
         if (!salonMap[booking.salonId]) {
-          const salon = await mockAPI.getSalonById(booking.salonId);
-          salonMap[booking.salonId] = salon;
+          try {
+            const salon = await salonService.getSalonById(booking.salonId);
+            salonMap[booking.salonId] = salon;
+          } catch (e) {
+            console.warn("Salon lookup failed", booking.salonId, e);
+          }
         }
 
-        for (const serviceId of booking.serviceIds) {
-          if (!serviceMap[serviceId]) {
-            const service = await mockAPI.getServiceById(serviceId);
-            serviceMap[serviceId] = service;
-          }
+        if (booking.serviceIds && booking.serviceIds.length) {
+          const services = await serviceService.getBySalonId(booking.salonId);
+          services.forEach((svc) => {
+            serviceMap[svc.id] = svc;
+          });
         }
       }
 

@@ -122,3 +122,23 @@ export async function scheduleLocalNotification(
     trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: secondsFromNow },
   });
 }
+
+export async function sendPushNotification(
+  to: string,
+  title: string,
+  body: string,
+  data?: Record<string, unknown>
+) {
+  try {
+    await fetch("https://exp.host/--/api/v2/push/send", {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ to, sound: "default", title, body, data }),
+    });
+  } catch (e) {
+    console.warn("Failed to send push notification", e);
+  }
+}

@@ -10,7 +10,12 @@ export const serviceService = {
     return snapshot.docs.map((d) => {
       const data = d.data() as Service;
       const { id, ...rest } = data;
-      return { id: d.id, ...rest };
+      return {
+        id: d.id,
+        ...rest,
+        price: typeof (rest as any).price === "string" ? Number((rest as any).price) : (rest as any).price,
+        duration: (rest as any).duration || "",
+      };
     });
   },
 
