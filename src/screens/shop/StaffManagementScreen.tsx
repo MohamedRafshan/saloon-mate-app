@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Alert,
   ScrollView,
@@ -10,54 +10,37 @@ import {
 } from "react-native";
 import { StaffModal } from "../../components/StaffModal";
 import { SERVICE_CATEGORIES } from "../../constants/categories";
+import { staffService } from "../../services/staffService";
 import { Staff } from "../../types/Staff";
 
 export function StaffManagementScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedStaff, setSelectedStaff] = useState<Staff | null>(null);
 
-  const [staffMembers, setStaffMembers] = useState<Staff[]>([
-    {
-      id: "1",
-      name: "Sarah Johnson",
-      email: "sarah@luxesalon.com",
-      phone: "+1 234 567 8901",
-      role: "Senior Stylist",
-      specialties: ["hair", "makeup"],
-      rating: 4.9,
-      active: true,
-    },
-    {
-      id: "2",
-      name: "Michael Chen",
-      email: "michael@luxesalon.com",
-      phone: "+1 234 567 8902",
-      role: "Barber",
-      specialties: ["hair", "grooming"],
-      rating: 4.8,
-      active: true,
-    },
-    {
-      id: "3",
-      name: "Emily Rodriguez",
-      email: "emily@luxesalon.com",
-      phone: "+1 234 567 8903",
-      role: "Nail Technician",
-      specialties: ["nails"],
-      rating: 4.7,
-      active: true,
-    },
-    {
-      id: "4",
-      name: "David Thompson",
-      email: "david@luxesalon.com",
-      phone: "+1 234 567 8904",
-      role: "Spa Therapist",
-      specialties: ["spa", "massage", "skincare"],
-      rating: 4.9,
-      active: false,
-    },
-  ]);
+  const [staffMembers, setStaffMembers] = useState<Staff[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch staff from backend on mount and when modal closes
+  const fetchStaff = async () => {
+    setLoading(true);
+    try {
+      const staffList = await staffService.getAll();
+      setStaffMembers(staffList || []);
+    } catch (e) {
+      setStaffMembers([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchStaff();
+    // Optionally: subscribe to staff changes for real-time updates
+    if (staffService.subscribe) {
+      const unsub = staffService.subscribe(fetchStaff);
+      return () => unsub && unsub();
+    }
+  }, []);
 
   const handleAddStaff = () => {
     setSelectedStaff(null);
@@ -69,7 +52,7 @@ export function StaffManagementScreen() {
     setModalVisible(true);
   };
 
-  const handleDeleteStaff = (staffId: string) => {
+  const handleDeleteStaff = async (staffId: string) => {
     Alert.alert(
       "Delete Staff Member",
       "Are you sure you want to remove this staff member?",
@@ -78,39 +61,30 @@ export function StaffManagementScreen() {
         {
           text: "Delete",
           style: "destructive",
-          onPress: () => {
-            setStaffMembers(staffMembers.filter((s) => s.id !== staffId));
+          onPress: async () => {
+            await staffService.delete(staffId);
+            fetchStaff();
           },
         },
       ]
     );
   };
 
-  const handleSaveStaff = (staff: Partial<Staff>) => {
+  const handleSaveStaff = async (staff: Partial<Staff>) => {
     if (staff.id) {
-      // Update existing staff
-      setStaffMembers(
-        staffMembers.map((s) =>
-          s.id === staff.id ? ({ ...s, ...staff } as Staff) : s
-        )
-      );
+      await staffService.update(staff.id, staff);
     } else {
-      // Add new staff
-      const newStaff: Staff = {
-        ...staff,
-        id: Date.now().toString(),
-        rating: 0,
-      } as Staff;
-      setStaffMembers([...staffMembers, newStaff]);
+      await staffService.create(staff);
     }
+    fetchStaff();
   };
 
-  const toggleStaffActive = (staffId: string) => {
-    setStaffMembers(
-      staffMembers.map((s) =>
-        s.id === staffId ? { ...s, active: !s.active } : s
-      )
-    );
+  const toggleStaffActive = async (staffId: string) => {
+    const staff = staffMembers.find((s) => s.id === staffId);
+    if (staff) {
+      await staffService.update(staffId, { active: !staff.active });
+      fetchStaff();
+    }
   };
 
   const getCategoryInfo = (categoryId: string) => {
@@ -119,6 +93,14 @@ export function StaffManagementScreen() {
 
   const activeStaff = staffMembers.filter((s) => s.active);
   const inactiveStaff = staffMembers.filter((s) => !s.active);
+
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <Text style={{ fontSize: 18, color: "#666" }}>Loading staff...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>

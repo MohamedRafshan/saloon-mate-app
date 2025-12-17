@@ -1,4 +1,5 @@
 import { db, firebase } from "../firebaseConfig";
+import { CACHE_EXPIRATION, CACHE_KEYS, cacheService } from "../services/cacheService";
 import { haversineKm } from "../services/locationService";
 import { Salon } from "../types/Salon";
 
@@ -34,23 +35,34 @@ export const salonService = {
   },
 
   async getAllSalons(): Promise<Salon[]> {
-    const salonsCol = db.collection("salons");
-    const salonSnapshot = await salonsCol.get();
-    const salonList = salonSnapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    })) as Salon[];
-    return salonList;
+    return cacheService.getOrFetch(
+      CACHE_KEYS.SALON_LIST,
+      async () => {
+        const salonsCol = db.collection("salons");
+        const salonSnapshot = await salonsCol.get();
+        return salonSnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as Salon[];
+      },
+      { expirationTime: CACHE_EXPIRATION.MEDIUM }
+    );
   },
 
   async getSalonById(id: string): Promise<Salon> {
-    const salonDocRef = db.collection("salons").doc(id);
-    const salonDoc = await salonDocRef.get();
-    if (salonDoc.exists) {
-      return { id: salonDoc.id, ...salonDoc.data() } as Salon;
-    } else {
-      throw new Error("Salon not found");
-    }
+    return cacheService.getOrFetch(
+      CACHE_KEYS.SALON_DETAIL(id),
+      async () => {
+        const salonDocRef = db.collection("salons").doc(id);
+        const salonDoc = await salonDocRef.get();
+        if (salonDoc.exists) {
+          return { id: salonDoc.id, ...salonDoc.data() } as Salon;
+        } else {
+          throw new Error("Salon not found");
+        }
+      },
+      { expirationTime: CACHE_EXPIRATION.LONG }
+    );
   },
 
   async searchSalons(queryString: string, city?: string): Promise<Salon[]> {
@@ -108,18 +120,24 @@ export const salonService = {
     longitude: number,
     limit: number = 25
   ): Promise<(Salon & { distanceKm: number })[]> {
-    const rough = await this.getNearby(latitude, longitude, 10);
-    const withDistance = rough
-      .filter((s) => s.location && typeof s.location.latitude === "number")
-      .map((s) => ({
-        ...s,
-        distanceKm: haversineKm(
-          { latitude, longitude },
-          { latitude: s.location.latitude, longitude: s.location.longitude }
-        ),
-      }))
-      .sort((a, b) => a.distanceKm - b.distanceKm);
-    return withDistance.slice(0, limit);
+    return cacheService.getOrFetch(
+      `${CACHE_KEYS.NEARBY_SALONS}:${latitude}:${longitude}`,
+      async () => {
+        const rough = await this.getNearby(latitude, longitude, 10);
+        const withDistance = rough
+          .filter((s) => s.location && typeof s.location.latitude === "number")
+          .map((s) => ({
+            ...s,
+            distanceKm: haversineKm(
+              { latitude, longitude },
+              { latitude: s.location.latitude, longitude: s.location.longitude }
+            ),
+          }))
+          .sort((a, b) => a.distanceKm - b.distanceKm);
+        return withDistance.slice(0, limit);
+      },
+      { expirationTime: CACHE_EXPIRATION.SHORT }
+    );
   },
 
   async searchWithLocation(
@@ -143,6 +161,9 @@ export const salonService = {
   async updateSalon(id: string, data: Partial<Salon>): Promise<Salon> {
     const salonDocRef = db.collection("salons").doc(id);
     await salonDocRef.update(data);
+    // Invalidate cache for this salon
+    await cacheService.remove(CACHE_KEYS.SALON_DETAIL(id));
+    await cacheService.clearPattern('*nearby*');
     return this.getSalonById(id);
   },
 };
