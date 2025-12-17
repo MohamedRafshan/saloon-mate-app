@@ -49,6 +49,7 @@ export const BusinessRegisterScreen = () => {
   // Location
   const [latitude, setLatitude] = useState("");
   const [longitude, setLongitude] = useState("");
+  const [locationRequested, setLocationRequested] = useState(false);
 
   // Owner Information
   const [ownerName, setOwnerName] = useState("");
@@ -365,6 +366,14 @@ export const BusinessRegisterScreen = () => {
       Alert.alert("Error", "Failed to get current location.");
     }
   };
+
+  // Auto-request location on mount
+  React.useEffect(() => {
+    if (!locationRequested) {
+      setLocationRequested(true);
+      handleUseMyLocation();
+    }
+  }, []);
 
   return (
     <KeyboardAvoidingView

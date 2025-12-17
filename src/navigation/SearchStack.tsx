@@ -5,7 +5,7 @@ import { SalonProfileScreen } from "../screens/customer/SalonProfileScreen";
 import { SearchScreen } from "../screens/customer/SearchScreen";
 
 export type SearchStackParamList = {
-  Search: undefined;
+  Search: { category?: string } | undefined;
   SalonProfile: { salonId: string };
   BookingForm: { salonId: string; salonName: string };
 };

@@ -1,4 +1,9 @@
-import { NavigationProp, useNavigation } from "@react-navigation/native";
+import {
+  NavigationProp,
+  RouteProp,
+  useNavigation,
+  useRoute,
+} from "@react-navigation/native";
 import React, { useEffect, useState } from "react";
 import {
   Dimensions,
@@ -14,6 +19,7 @@ import {
 } from "react-native";
 import { salonService } from "../../api/salonService";
 import { HomeStackParamList } from "../../navigation/HomeStack";
+import { SearchStackParamList } from "../../navigation/SearchStack";
 import {
   getCurrentCoordinates,
   haversineKm,
@@ -50,19 +56,25 @@ const isWeb = Platform.OS === "web";
 
 export const SearchScreen = () => {
   const navigation = useNavigation<NavigationProp<HomeStackParamList>>();
+  const route = useRoute<RouteProp<SearchStackParamList, "Search">>();
   const [salons, setSalons] = useState<Salon[]>([]);
   const [filteredSalons, setFilteredSalons] = useState<Salon[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("All treatments");
+  const [searchQuery, setSearchQuery] = useState(
+    route.params?.category || "All treatments"
+  );
   const [viewMode, setViewMode] = useState<ViewMode>("list"); // Always use list view for Expo Go
 
   // Filter states
   const [sortBy, setSortBy] = useState<SortOption>("best-match");
   const [venueType, setVenueType] = useState<VenueType>("all");
   const [maxPrice, setMaxPrice] = useState(10000);
+  const [minPrice, setMinPrice] = useState(0);
   const [showFilters, setShowFilters] = useState(false);
   const [showSortModal, setShowSortModal] = useState(false);
   const [showVenueTypeModal, setShowVenueTypeModal] = useState(false);
+  const [showPriceModal, setShowPriceModal] = useState(false);
+  const [showOptionsModal, setShowOptionsModal] = useState(false);
 
   // Map state
   const [mapRegion, setMapRegion] = useState({
@@ -339,13 +351,20 @@ export const SearchScreen = () => {
           <Text style={styles.chevron}>▼</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.filterChip}>
+        <TouchableOpacity
+          style={styles.filterChip}
+          onPress={() => setShowPriceModal(true)}
+        >
           <Text style={styles.filterChipText}>Price</Text>
           <Text style={styles.chevron}>▼</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.filterChip}>
+        <TouchableOpacity
+          style={styles.filterChip}
+          onPress={() => setShowOptionsModal(true)}
+        >
           <Text style={styles.filterChipText}>Options</Text>
+          <Text style={styles.chevron}>▼</Text>
         </TouchableOpacity>
       </View>
 
@@ -445,6 +464,95 @@ export const SearchScreen = () => {
               <Text style={styles.modalOptionIcon}>📍</Text>
               <Text style={styles.modalOptionText}>Nearest</Text>
               {sortBy === "nearest" && <Text style={styles.checkmark}>✓</Text>}
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Price Modal */}
+      <Modal
+        visible={showPriceModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowPriceModal(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setShowPriceModal(false)}
+        >
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Price Range</Text>
+
+            <View style={styles.priceInputs}>
+              <View style={styles.priceInput}>
+                <Text style={styles.priceLabel}>Min Price</Text>
+                <TextInput
+                  style={styles.priceInputField}
+                  value={String(minPrice)}
+                  onChangeText={(t) => setMinPrice(Number(t) || 0)}
+                  keyboardType="numeric"
+                  placeholder="0"
+                />
+              </View>
+              <View style={styles.priceInput}>
+                <Text style={styles.priceLabel}>Max Price</Text>
+                <TextInput
+                  style={styles.priceInputField}
+                  value={String(maxPrice)}
+                  onChangeText={(t) => setMaxPrice(Number(t) || 10000)}
+                  keyboardType="numeric"
+                  placeholder="10000"
+                />
+              </View>
+            </View>
+
+            <TouchableOpacity
+              style={styles.applyButton}
+              onPress={() => setShowPriceModal(false)}
+            >
+              <Text style={styles.applyButtonText}>Apply</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Options Modal */}
+      <Modal
+        visible={showOptionsModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowOptionsModal(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setShowOptionsModal(false)}
+        >
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>More Options</Text>
+
+            <TouchableOpacity
+              style={styles.modalOption}
+              onPress={() => {
+                setShowOptionsModal(false);
+                setShowVenueTypeModal(true);
+              }}
+            >
+              <Text style={styles.modalOptionIcon}>🏢</Text>
+              <Text style={styles.modalOptionText}>Venue Type</Text>
+              <Text style={styles.chevron}>›</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.modalOption}
+              onPress={() => {
+                clearFilters();
+                setShowOptionsModal(false);
+              }}
+            >
+              <Text style={styles.modalOptionIcon}>🔄</Text>
+              <Text style={styles.modalOptionText}>Clear All Filters</Text>
             </TouchableOpacity>
           </View>
         </TouchableOpacity>
@@ -823,6 +931,39 @@ const styles = StyleSheet.create({
     fontSize: 20,
     color: "#6C5CE7",
     fontWeight: "600",
+  },
+  priceInputs: {
+    flexDirection: "row",
+    gap: 16,
+    marginBottom: 20,
+  },
+  priceInput: {
+    flex: 1,
+  },
+  priceLabel: {
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 8,
+  },
+  priceInputField: {
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: "#000",
+  },
+  applyButton: {
+    backgroundColor: "#6C5CE7",
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: "center",
+  },
+  applyButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#fff",
   },
   // Web placeholder styles
   webMapPlaceholder: {

@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { salonService } from "../../api/salonService";
 import { HomeStackParamList } from "../../navigation/HomeStack";
+import { getCurrentCoordinates } from "../../services/locationService";
 import { theme } from "../../theme";
 import { Salon } from "../../types/Salon";
 
@@ -62,10 +63,15 @@ export const HomeScreen = () => {
   const navigation =
     useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
   const [salons, setSalons] = useState<Salon[]>([]);
+  const [nearbySalons, setNearbySalons] = useState<
+    (Salon & { distanceKm: number })[]
+  >([]);
   const [loading, setLoading] = useState(true);
+  const [loadingNearby, setLoadingNearby] = useState(true);
 
   useEffect(() => {
     loadSalons();
+    loadNearbySalons();
   }, []);
 
   const loadSalons = async () => {
@@ -76,6 +82,26 @@ export const HomeScreen = () => {
       console.error("Failed to load salons:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadNearbySalons = async () => {
+    try {
+      const coords = await getCurrentCoordinates();
+      if (coords) {
+        const nearby = await salonService.getNearbySorted(
+          coords.latitude,
+          coords.longitude,
+          25
+        );
+        // Filter to salons within 5km
+        const within5km = nearby.filter((s) => s.distanceKm <= 5);
+        setNearbySalons(within5km);
+      }
+    } catch (error) {
+      console.warn("Failed to load nearby salons:", error);
+    } finally {
+      setLoadingNearby(false);
     }
   };
 
@@ -107,11 +133,19 @@ export const HomeScreen = () => {
     </TouchableOpacity>
   );
 
+  const handleCategoryPress = (category: CategoryItem) => {
+    navigation.navigate("SearchTab" as any, {
+      screen: "Search",
+      params: { category: category.name },
+    });
+  };
+
   const renderCategoryCard = (category: CategoryItem) => (
     <TouchableOpacity
       key={category.id}
       style={styles.categoryCard}
       activeOpacity={0.8}
+      onPress={() => handleCategoryPress(category)}
     >
       <Image source={{ uri: category.image }} style={styles.categoryImage} />
       <View style={styles.categoryOverlay}>
@@ -129,7 +163,6 @@ export const HomeScreen = () => {
   }
 
   const recommended = salons.slice(0, 2);
-  const newToFresha = salons.slice(2, 4);
   const trending = salons.slice(4, 6);
 
   return (
@@ -154,14 +187,37 @@ export const HomeScreen = () => {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>New to Fresha</Text>
-          <ScrollView
-            horizontal={true}
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.horizontalScroll}
-          >
-            {newToFresha.map(renderSalonCard)}
-          </ScrollView>
+          <Text style={styles.sectionTitle}>Nearby Salons</Text>
+          {loadingNearby ? (
+            <View style={styles.nearbySalonsLoading}>
+              <ActivityIndicator size="small" color={theme.colors.primary} />
+            </View>
+          ) : nearbySalons.length === 0 ? (
+            <View style={styles.emptyNearby}>
+              <Text style={styles.emptyNearbyText}>📍</Text>
+              <Text style={styles.emptyNearbyTitle}>
+                No nearby salons available
+              </Text>
+              <Text style={styles.emptyNearbySubtitle}>
+                Try exploring other categories or search for specific salons
+              </Text>
+            </View>
+          ) : (
+            <ScrollView
+              horizontal={true}
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.horizontalScroll}
+            >
+              {nearbySalons.map((salon) => (
+                <View key={salon.id}>
+                  {renderSalonCard(salon)}
+                  <Text style={styles.distanceBadge}>
+                    {salon.distanceKm.toFixed(1)} km away
+                  </Text>
+                </View>
+              ))}
+            </ScrollView>
+          )}
         </View>
 
         <View style={styles.section}>
@@ -324,5 +380,38 @@ const styles = StyleSheet.create({
   },
   bottomSpacer: {
     height: 80,
+  },
+  nearbySalonsLoading: {
+    paddingVertical: 40,
+    alignItems: "center",
+  },
+  emptyNearby: {
+    paddingVertical: 40,
+    paddingHorizontal: 40,
+    alignItems: "center",
+  },
+  emptyNearbyText: {
+    fontSize: 48,
+    marginBottom: 12,
+  },
+  emptyNearbyTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#000",
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  emptyNearbySubtitle: {
+    fontSize: 14,
+    color: "#666",
+    textAlign: "center",
+    lineHeight: 20,
+  },
+  distanceBadge: {
+    fontSize: 12,
+    color: "#666",
+    marginTop: 4,
+    marginLeft: 16,
+    fontWeight: "500",
   },
 });
