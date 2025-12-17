@@ -3,6 +3,7 @@ import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Dimensions,
   Image,
   ScrollView,
@@ -12,6 +13,7 @@ import {
   View,
 } from "react-native";
 import { mockAPI } from "../../api/mock";
+import { useUserLocation } from "../../hooks/useUserLocation";
 import { HomeStackParamList } from "../../navigation/HomeStack";
 import { theme } from "../../theme";
 import { Salon } from "../../types/Salon";
@@ -63,10 +65,24 @@ export const HomeScreen = () => {
     useNavigation<NativeStackNavigationProp<HomeStackParamList>>();
   const [salons, setSalons] = useState<Salon[]>([]);
   const [loading, setLoading] = useState(true);
+  const {
+    location,
+    error: locationError,
+    requestPermission,
+  } = useUserLocation();
 
   useEffect(() => {
     loadSalons();
   }, []);
+
+  useEffect(() => {
+    if (
+      locationError &&
+      locationError !== "Permission to access location was denied"
+    ) {
+      Alert.alert("Location Error", locationError);
+    }
+  }, [locationError]);
 
   const loadSalons = async () => {
     try {
@@ -76,6 +92,13 @@ export const HomeScreen = () => {
       console.error("Failed to load salons:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleEnableLocation = async () => {
+    const granted = await requestPermission();
+    if (granted) {
+      Alert.alert("Success", "Location access granted!");
     }
   };
 
@@ -135,11 +158,33 @@ export const HomeScreen = () => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>For you</Text>
+        <View>
+          <Text style={styles.headerTitle}>For you</Text>
+          {location && (
+            <Text style={styles.locationText}>
+              📍 {location.latitude.toFixed(4)}, {location.longitude.toFixed(4)}
+            </Text>
+          )}
+        </View>
         <TouchableOpacity style={styles.searchButton}>
           <Text style={styles.searchIcon}>🔍</Text>
         </TouchableOpacity>
       </View>
+
+      {!location && (
+        <View style={styles.locationPrompt}>
+          <Text style={styles.locationPromptTitle}>Enable Location</Text>
+          <Text style={styles.locationPromptText}>
+            Allow access to your location to find salons near you
+          </Text>
+          <TouchableOpacity
+            style={styles.locationPromptButton}
+            onPress={handleEnableLocation}
+          >
+            <Text style={styles.locationPromptButtonText}>Enable Location</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       <ScrollView
         style={styles.scrollView}
@@ -327,5 +372,41 @@ const styles = StyleSheet.create({
   },
   bottomSpacer: {
     height: 80,
+  },
+  locationText: {
+    fontSize: 12,
+    color: "#666",
+    marginTop: 4,
+  },
+  locationPrompt: {
+    marginHorizontal: 20,
+    marginVertical: 12,
+    padding: 16,
+    backgroundColor: "#F5F5F5",
+    borderRadius: 12,
+    alignItems: "center",
+  },
+  locationPromptTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#000",
+    marginBottom: 8,
+  },
+  locationPromptText: {
+    fontSize: 13,
+    color: "#666",
+    textAlign: "center",
+    marginBottom: 12,
+  },
+  locationPromptButton: {
+    backgroundColor: theme.colors.primary,
+    paddingHorizontal: 24,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  locationPromptButtonText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "600",
   },
 });
