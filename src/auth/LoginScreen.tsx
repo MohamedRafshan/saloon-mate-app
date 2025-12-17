@@ -30,7 +30,7 @@ export const LoginScreen = () => {
   );
 
   const handleLogin = async () => {
-    console.log("emai", email, password);
+    console.log("email", email, password);
 
     if (!email || !password) {
       Alert.alert("Error", "Please enter email and password");

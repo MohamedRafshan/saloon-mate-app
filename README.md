@@ -48,6 +48,32 @@ In the output, you'll find options to open the app in a
 
 You can start developing by editing the files inside the **app** and **src** directories. This project uses [file-based routing](https://docs.expo.dev/router/introduction) and a modular folder structure for screens, navigation, and business logic.
 
+## Push Notifications
+
+This app uses `expo-notifications` to register an Expo Push Token and store it in Firestore under `users/{uid}.pushToken`.
+
+Install native modules with Expo to ensure compatible versions:
+
+```bash
+npx expo install expo-notifications expo-location
+```
+
+Notes:
+
+- iOS and Android push require a development build or EAS build (not Expo Go).
+- Build the app, sign in, and check Firestore for `pushToken` on your user document.
+- To send a test push, use the Expo Push Tool: https://expo.dev/notifications
+
+## Location-Based Search
+
+We request foreground location permissions and use the Haversine formula to sort salons by distance on the Search screen. If permission is denied, the list still works without distance sorting.
+
+Where to look:
+
+- Request + token save: `app/index.tsx`, `src/services/notifications.ts`
+- Location helpers: `src/services/locationService.ts`
+- Distance sorting + display: `src/screens/customer/SearchScreen.tsx`
+
 ## Project Structure
 
 - `app/` - Expo Router entry points

@@ -27,7 +27,7 @@ export function ServiceModal({
 }: ServiceModalProps) {
   const [name, setName] = useState(service?.name || "");
   const [description, setDescription] = useState(service?.description || "");
-  const [price, setPrice] = useState(service?.price.toString() || "");
+  const [price, setPrice] = useState(service?.price?.toString() || "");
   const [duration, setDuration] = useState(service?.duration || "");
   const [category, setCategory] = useState(service?.category || "");
 
@@ -57,7 +57,6 @@ export function ServiceModal({
       duration,
       category,
       currency: "$",
-      salonId: service?.salonId || "1",
     });
     handleClose();
   };

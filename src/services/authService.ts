@@ -52,12 +52,13 @@ export const authService = {
     };
   },
 
-  async getUser(uid: string): Promise<AuthUser | null> {
-    if (!uid || typeof uid !== "string") {
+  async getUser(uid?: string): Promise<AuthUser | null> {
+    const effectiveUid = uid || auth.currentUser?.uid || "";
+    if (!effectiveUid || typeof effectiveUid !== "string") {
       return null;
     }
     try {
-      const userDoc = await db.collection("users").doc(uid).get();
+      const userDoc = await db.collection("users").doc(effectiveUid).get();
       if (userDoc.exists) {
         return userDoc.data() as AuthUser;
       }

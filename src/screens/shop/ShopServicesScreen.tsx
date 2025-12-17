@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Alert,
   ScrollView,
@@ -9,6 +9,8 @@ import {
 } from "react-native";
 import { ServiceModal } from "../../components/ServiceModal";
 import { SERVICE_CATEGORIES } from "../../constants/categories";
+import { authService } from "../../services/authService";
+import { serviceService } from "../../services/serviceService";
 import { Service } from "../../types/Service";
 
 export function ShopServicesScreen() {
@@ -16,62 +18,25 @@ export function ShopServicesScreen() {
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
-  const [services, setServices] = useState<Service[]>([
-    {
-      id: "1",
-      name: "Classic Haircut",
-      price: 30,
-      duration: "30 mins",
-      category: "hair",
-      salonId: "1",
-      currency: "$",
-    },
-    {
-      id: "2",
-      name: "Hair Coloring",
-      price: 80,
-      duration: "2 hours",
-      category: "hair",
-      salonId: "1",
-      currency: "$",
-    },
-    {
-      id: "3",
-      name: "Beard Trim",
-      price: 20,
-      duration: "20 mins",
-      category: "grooming",
-      salonId: "1",
-      currency: "$",
-    },
-    {
-      id: "4",
-      name: "Manicure",
-      price: 25,
-      duration: "45 mins",
-      category: "nails",
-      salonId: "1",
-      currency: "$",
-    },
-    {
-      id: "5",
-      name: "Pedicure",
-      price: 35,
-      duration: "1 hour",
-      category: "nails",
-      salonId: "1",
-      currency: "$",
-    },
-    {
-      id: "6",
-      name: "Facial Treatment",
-      price: 60,
-      duration: "1 hour",
-      category: "spa",
-      salonId: "1",
-      currency: "$",
-    },
-  ]);
+  const [services, setServices] = useState<Service[]>([]);
+  const [salonId, setSalonId] = useState<string | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      const user = await authService.getUser();
+      const bId = user?.businessId || null;
+      if (!mounted) return;
+      setSalonId(bId);
+      if (bId) {
+        const list = await serviceService.getBySalonId(bId);
+        if (mounted) setServices(list);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const handleAddService = () => {
     setSelectedService(null);
@@ -92,29 +57,34 @@ export function ShopServicesScreen() {
         {
           text: "Delete",
           style: "destructive",
-          onPress: () => {
-            setServices(services.filter((s) => s.id !== serviceId));
+          onPress: async () => {
+            try {
+              await serviceService.remove(serviceId);
+              setServices(services.filter((s) => s.id !== serviceId));
+            } catch (e) {
+              Alert.alert("Error", "Failed to delete service.");
+            }
           },
         },
       ]
     );
   };
 
-  const handleSaveService = (service: Partial<Service>) => {
-    if (service.id) {
-      // Update existing service
-      setServices(
-        services.map((s) =>
-          s.id === service.id ? ({ ...s, ...service } as Service) : s
-        )
-      );
-    } else {
-      // Add new service
-      const newService: Service = {
-        ...service,
-        id: Date.now().toString(),
-      } as Service;
-      setServices([...services, newService]);
+  const handleSaveService = async (service: Partial<Service>) => {
+    try {
+      if (service.id) {
+        const updated = await serviceService.update(service.id, service);
+        setServices(services.map((s) => (s.id === updated.id ? updated : s)));
+      } else {
+        if (!salonId) {
+          Alert.alert("Error", "No salon context found.");
+          return;
+        }
+        const created = await serviceService.create(salonId, service);
+        setServices([created, ...services]);
+      }
+    } catch (e) {
+      Alert.alert("Error", "Failed to save service.");
     }
   };
 

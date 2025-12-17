@@ -14,6 +14,10 @@ import {
 } from "react-native";
 import { salonService } from "../../api/salonService";
 import { HomeStackParamList } from "../../navigation/HomeStack";
+import {
+  getCurrentCoordinates,
+  haversineKm,
+} from "../../services/locationService";
 import { Salon } from "../../types/Salon";
 
 // Conditionally import MapView only on native platforms
@@ -67,9 +71,28 @@ export const SearchScreen = () => {
     latitudeDelta: 0.15,
     longitudeDelta: 0.15,
   });
+  const [coords, setCoords] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
 
   useEffect(() => {
     loadSalons();
+    (async () => {
+      try {
+        const c = await getCurrentCoordinates();
+        if (c) {
+          setCoords(c);
+          setMapRegion((r) => ({
+            ...r,
+            latitude: c.latitude,
+            longitude: c.longitude,
+          }));
+        }
+      } catch (e) {
+        console.log("Location unavailable", e);
+      }
+    })();
   }, []);
 
   useEffect(() => {
@@ -118,10 +141,18 @@ export const SearchScreen = () => {
     if (sortBy === "top-rated") {
       filtered.sort((a, b) => b.rating - a.rating);
     } else if (sortBy === "nearest") {
-      // For now, just sort by city (in real app, would use GPS distance)
-      filtered.sort((a, b) =>
-        (a.city || a.address).localeCompare(b.city || b.address)
-      );
+      if (coords) {
+        filtered = filtered
+          .filter((s) => s.location)
+          .map((s) => ({
+            ...s,
+            distanceKm: haversineKm(coords, {
+              latitude: s.location!.latitude,
+              longitude: s.location!.longitude,
+            }),
+          }))
+          .sort((a: any, b: any) => (a.distanceKm ?? 0) - (b.distanceKm ?? 0));
+      }
     } else {
       // Best match - combine rating and review count
       filtered.sort(
@@ -141,7 +172,7 @@ export const SearchScreen = () => {
     setSearchQuery("All treatments");
   };
 
-  const renderSalonCard = (salon: Salon) => (
+  const renderSalonCard = (salon: any) => (
     <TouchableOpacity
       key={salon.id}
       style={styles.salonCard}
@@ -160,6 +191,14 @@ export const SearchScreen = () => {
           <Text style={styles.rating}>{salon.rating.toFixed(1)}</Text>
           <Text style={styles.reviewCount}>({salon.reviewCount})</Text>
         </View>
+
+        {coords && typeof salon.distanceKm === "number" && (
+          <View style={styles.distanceBadge}>
+            <Text style={styles.distanceText}>
+              {salon.distanceKm.toFixed(1)} km away
+            </Text>
+          </View>
+        )}
 
         {salon.category && (
           <View style={styles.categoryBadge}>
@@ -657,6 +696,19 @@ const styles = StyleSheet.create({
   categoryText: {
     fontSize: 12,
     color: "#666",
+    fontWeight: "500",
+  },
+  distanceBadge: {
+    alignSelf: "flex-start",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    backgroundColor: "#EEF5FF",
+    borderRadius: 12,
+    marginBottom: 6,
+  },
+  distanceText: {
+    fontSize: 12,
+    color: "#1B66D1",
     fontWeight: "500",
   },
   emptyState: {

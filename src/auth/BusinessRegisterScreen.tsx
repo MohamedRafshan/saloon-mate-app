@@ -345,6 +345,27 @@ export const BusinessRegisterScreen = () => {
     }
   };
 
+  const handleUseMyLocation = async () => {
+    try {
+      const { getCurrentCoordinates } = await import(
+        "../services/locationService"
+      );
+      const coords = await getCurrentCoordinates();
+      if (!coords) {
+        Alert.alert(
+          "Location Permission",
+          "Please allow location access to auto-fill coordinates."
+        );
+        return;
+      }
+      setLatitude(String(coords.latitude));
+      setLongitude(String(coords.longitude));
+      Alert.alert("Location Set", "Coordinates filled from your device");
+    } catch (e) {
+      Alert.alert("Error", "Failed to get current location.");
+    }
+  };
+
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -515,6 +536,15 @@ export const BusinessRegisterScreen = () => {
             <Text style={styles.helperText}>
               Provide coordinates to help customers find your business
             </Text>
+
+            <TouchableOpacity
+              style={styles.locationButton}
+              onPress={handleUseMyLocation}
+            >
+              <Text style={styles.locationButtonText}>
+                Use My Current Location
+              </Text>
+            </TouchableOpacity>
 
             <TextInput
               style={styles.input}
@@ -782,6 +812,19 @@ const styles = StyleSheet.create({
   linkContainer: {
     marginBottom: 16,
     marginTop: 16,
+  },
+  locationButton: {
+    backgroundColor: "#F0EDFF",
+    borderColor: "#6C5CE7",
+    borderWidth: 1,
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  locationButtonText: {
+    color: "#6C5CE7",
+    fontWeight: "600",
   },
   linkQuestion: {
     fontSize: 15,

@@ -5,6 +5,11 @@ import { AuthStack } from "../src/navigation/AuthStack";
 import { CustomerTabNavigator } from "../src/navigation/CustomerTabNavigator";
 import { ShopTabNavigator } from "../src/navigation/ShopTabNavigator";
 import { authService } from "../src/services/authService";
+import { getCurrentCoordinates } from "../src/services/locationService";
+import {
+  configureNotificationHandlers,
+  registerPushToken,
+} from "../src/services/notifications";
 
 const RootStack = createStackNavigator();
 
@@ -22,6 +27,20 @@ export default function Page() {
 
     return unsubscribe;
   }, []);
+
+  // Side-effects when user becomes available: configure push + location once
+  useEffect(() => {
+    configureNotificationHandlers();
+    if (!user) return;
+    (async () => {
+      const token = await registerPushToken();
+      if (token) {
+        console.log("Expo Push Token (copy for testing):", token);
+      }
+      // Preload current location (optional); UI can also request lazily
+      await getCurrentCoordinates();
+    })();
+  }, [user]);
 
   if (isLoading) {
     return (

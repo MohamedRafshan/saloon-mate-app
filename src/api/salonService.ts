@@ -1,4 +1,5 @@
 import { db, firebase } from "../firebaseConfig";
+import { haversineKm } from "../services/locationService";
 import { Salon } from "../types/Salon";
 
 export const salonService = {
@@ -100,6 +101,43 @@ export const salonService = {
         salon.location.longitude >= lonRange[0] &&
         salon.location.longitude <= lonRange[1]
     );
+  },
+
+  async getNearbySorted(
+    latitude: number,
+    longitude: number,
+    limit: number = 25
+  ): Promise<(Salon & { distanceKm: number })[]> {
+    const rough = await this.getNearby(latitude, longitude, 10);
+    const withDistance = rough
+      .filter((s) => s.location && typeof s.location.latitude === "number")
+      .map((s) => ({
+        ...s,
+        distanceKm: haversineKm(
+          { latitude, longitude },
+          { latitude: s.location.latitude, longitude: s.location.longitude }
+        ),
+      }))
+      .sort((a, b) => a.distanceKm - b.distanceKm);
+    return withDistance.slice(0, limit);
+  },
+
+  async searchWithLocation(
+    queryString: string,
+    coords?: { latitude: number; longitude: number }
+  ): Promise<(Salon & { distanceKm?: number })[]> {
+    const base = await this.searchSalons(queryString);
+    if (!coords) return base;
+    return base
+      .filter((s) => s.location)
+      .map((s) => ({
+        ...s,
+        distanceKm: haversineKm(
+          coords,
+          { latitude: s.location!.latitude, longitude: s.location!.longitude }
+        ),
+      }))
+      .sort((a, b) => (a.distanceKm ?? 0) - (b.distanceKm ?? 0));
   },
 
   async updateSalon(id: string, data: Partial<Salon>): Promise<Salon> {
